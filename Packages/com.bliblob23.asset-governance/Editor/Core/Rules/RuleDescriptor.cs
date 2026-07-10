@@ -5,7 +5,7 @@ using System.Collections.ObjectModel;
 namespace UnityAssetGovernance
 {
     /// <summary>
-    /// Immutable metadata that identifies and describes an asset rule.
+    /// 用于标识和描述资源规则的不可变元数据。
     /// </summary>
     public sealed class RuleDescriptor
     {
@@ -41,7 +41,7 @@ namespace UnityAssetGovernance
         }
 
         /// <summary>
-        /// Gets the stable, globally unique identifier used by configuration and reports.
+        /// 获取用于配置和报告的稳定且全局唯一的规则标识符。
         /// </summary>
         public string Id { get; }
 
@@ -52,9 +52,9 @@ namespace UnityAssetGovernance
         public RuleSeverity DefaultSeverity { get; }
 
         /// <summary>
-        /// Gets asset types advertised by this rule for discovery and UI purposes.
-        /// An empty collection means the rule does not declare a type restriction here.
-        /// <see cref="IAssetRule.CanEvaluate"/> remains the authoritative runtime check.
+        /// 获取规则声明支持的资源类型，供规则发现和界面展示使用。
+        /// 空集合表示规则未在此声明静态类型限制。
+        /// 运行时是否适用仍以 <see cref="IAssetRule.CanEvaluate"/> 的返回结果为准。
         /// </summary>
         public IReadOnlyList<Type> ApplicableAssetTypes => _applicableAssetTypes;
 

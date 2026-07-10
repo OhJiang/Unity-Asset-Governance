@@ -3,8 +3,8 @@ using System.Collections.Generic;
 namespace UnityAssetGovernance
 {
     /// <summary>
-    /// Public extension point for asset validation rules.
-    /// Implementations should evaluate assets without modifying them.
+    /// 资源验证规则的公共扩展点。
+    /// 实现类应只检查资源，不应在检查过程中修改资源。
     /// </summary>
     public interface IAssetRule
     {

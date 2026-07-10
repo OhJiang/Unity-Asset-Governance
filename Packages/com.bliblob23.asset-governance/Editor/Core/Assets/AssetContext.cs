@@ -4,7 +4,7 @@ using UnityEditor;
 namespace UnityAssetGovernance
 {
     /// <summary>
-    /// Read-only information supplied to a rule for one asset evaluation.
+    /// 规则检查单个资源时使用的只读上下文信息。
     /// </summary>
     public sealed class AssetContext
     {
@@ -36,12 +36,12 @@ namespace UnityAssetGovernance
         public Type AssetType { get; }
 
         /// <summary>
-        /// Gets the loaded asset when the scanner has one available; otherwise null.
+        /// 获取扫描器已经加载的资源对象；未加载时为空引用。
         /// </summary>
         public UnityEngine.Object Asset { get; }
 
         /// <summary>
-        /// Gets the asset importer when one exists for the asset; otherwise null.
+        /// 获取资源对应的导入器；资源不存在导入器时为空引用。
         /// </summary>
         public AssetImporter Importer { get; }
 

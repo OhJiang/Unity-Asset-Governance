@@ -3,7 +3,7 @@ using System;
 namespace UnityAssetGovernance
 {
     /// <summary>
-    /// Immutable issue reported by an asset rule.
+    /// 资源规则报告的不可变验证问题。
     /// </summary>
     public sealed class ValidationIssue
     {
