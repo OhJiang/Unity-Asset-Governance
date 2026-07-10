@@ -12,3 +12,5 @@ All notable changes to this package will be documented in this file.
 - Package smoke test.
 - Extensible `IAssetRule` contract.
 - Immutable rule descriptor, asset context, severity, and validation issue models.
+- Automatic `IAssetRule` discovery through Unity `TypeCache`.
+- Validation for rule construction, descriptors, duplicate IDs, and deterministic ordering.

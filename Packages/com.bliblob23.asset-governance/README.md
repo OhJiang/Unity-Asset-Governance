@@ -18,16 +18,17 @@ Early development. Public APIs are not stable.
 - Package smoke test
 - Public, implementation-agnostic asset rule contract
 - Immutable rule metadata, asset context, and validation issue models
+- Automatic rule discovery through Unity `TypeCache`
+- Rule construction, descriptor, duplicate ID, and deterministic ordering validation
 
 ## Roadmap
 
-1. Rule discovery
-2. Asset scanning
-3. Validation runner
-4. ScriptableObject configuration
-5. Automatic fixes
-6. Editor window
-7. CI integration
+1. Asset scanning
+2. Validation runner
+3. ScriptableObject configuration
+4. Automatic fixes
+5. Editor window
+6. CI integration
 
 ## License
 

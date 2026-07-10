@@ -65,7 +65,7 @@ namespace UnityAssetGovernance.Tests
         [Test]
         public void CustomRule_CanImplementAndUsePublicRuleContract()
         {
-            IAssetRule rule = new ExampleRule();
+            IAssetRule rule = new ExampleRule<TextureRuleMarker>();
             var context = new AssetContext(
                 "asset-guid",
                 "Assets/My Texture.png",
@@ -81,7 +81,7 @@ namespace UnityAssetGovernance.Tests
             Assert.That(issue.AssetPath, Is.EqualTo(context.AssetPath));
         }
 
-        private sealed class ExampleRule : IAssetRule
+        private sealed class ExampleRule<TMarker> : IAssetRule
         {
             private static readonly RuleDescriptor DescriptorValue = new RuleDescriptor(
                 "example.rule",
@@ -105,6 +105,10 @@ namespace UnityAssetGovernance.Tests
                     context.AssetPath,
                     "Example issue.");
             }
+        }
+
+        private sealed class TextureRuleMarker
+        {
         }
     }
 }
