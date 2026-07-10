@@ -20,14 +20,15 @@ Early development. Public APIs are not stable.
 - Immutable rule metadata, asset context, and validation issue models
 - Automatic rule discovery through Unity `TypeCache`
 - Rule construction, descriptor, duplicate ID, and deterministic ordering validation
+- Recursive asset and folder scanning with duplicate removal and deterministic ordering
 
 ## Roadmap
 
-1. Asset scanning
-2. Validation runner
-3. ScriptableObject configuration
-4. Automatic fixes
-5. Editor window
+1. Validation runner
+2. Probe validation rules
+3. Editor window
+4. ScriptableObject configuration
+5. Automatic fixes
 6. CI integration
 
 ## License
