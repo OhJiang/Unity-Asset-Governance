@@ -16,17 +16,18 @@ Early development. Public APIs are not stable.
 - Editor-only assembly
 - EditMode test assembly
 - Package smoke test
+- Public, implementation-agnostic asset rule contract
+- Immutable rule metadata, asset context, and validation issue models
 
 ## Roadmap
 
-1. Rule model
-2. Rule discovery
-3. Asset scanning
-4. Validation runner
-5. ScriptableObject configuration
-6. Automatic fixes
-7. Editor window
-8. CI integration
+1. Rule discovery
+2. Asset scanning
+3. Validation runner
+4. ScriptableObject configuration
+5. Automatic fixes
+6. Editor window
+7. CI integration
 
 ## License
 

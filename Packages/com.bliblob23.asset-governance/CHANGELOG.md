@@ -10,3 +10,5 @@ All notable changes to this package will be documented in this file.
 - Editor-only assembly.
 - Editor test assembly.
 - Package smoke test.
+- Extensible `IAssetRule` contract.
+- Immutable rule descriptor, asset context, severity, and validation issue models.
