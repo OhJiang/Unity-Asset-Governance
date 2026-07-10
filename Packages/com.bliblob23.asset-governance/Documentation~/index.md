@@ -24,6 +24,21 @@ assets are removed, and results are sorted by asset path. Each result is represe
 scanner does not load the asset object by default, so rules that only need paths or importer data do
 not pay an unnecessary loading cost.
 
+## Rule Execution
+
+`RuleRunner.Run()` combines scanned `AssetContext` instances with automatically discovered or
+explicitly supplied rules. It calls `CanEvaluate()` before `Evaluate()`, gathers issues, and returns
+a deterministic `ValidationRunResult`. Exceptions from one rule are captured as
+`RuleExecutionError` records and do not prevent other rules or assets from being checked.
+
+```csharp
+var contexts = AssetScanner.Scan(new[] { "Assets/Textures" });
+var result = RuleRunner.Run(contexts);
+```
+
+Resource violations are available through `result.Issues`; framework execution failures are kept
+separately in `result.ExecutionErrors`.
+
 ## Planned Documentation
 
 - Installation
