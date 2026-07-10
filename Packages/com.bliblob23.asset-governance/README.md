@@ -22,11 +22,12 @@ Early development. Public APIs are not stable.
 - Rule construction, descriptor, duplicate ID, and deterministic ordering validation
 - Recursive asset and folder scanning with duplicate removal and deterministic ordering
 - Synchronous rule execution with exception isolation and deterministic results
+- Built-in `UAG-NAME-001` rule for asset paths and file names containing spaces
 
 ## Roadmap
 
-1. Probe validation rules
-2. Editor window
+1. Minimal Editor window
+2. UI Texture Mipmap probe rule
 3. ScriptableObject configuration
 4. Automatic fixes
 5. CI integration

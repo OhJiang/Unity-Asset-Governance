@@ -39,6 +39,14 @@ var result = RuleRunner.Run(contexts);
 Resource violations are available through `result.Issues`; framework execution failures are kept
 separately in `result.ExecutionErrors`.
 
+## Built-in Rules
+
+### UAG-NAME-001: Asset Paths Must Not Contain Spaces
+
+This warning applies to every asset type. It reports an issue when any part of the asset path,
+including parent folders or the file name, contains a normal space character. The rule is read-only
+because automatically renaming assets can affect external tools and workflows.
+
 ## Planned Documentation
 
 - Installation
