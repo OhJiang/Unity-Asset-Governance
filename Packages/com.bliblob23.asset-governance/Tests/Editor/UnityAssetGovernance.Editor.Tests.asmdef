@@ -1,0 +1,21 @@
+{
+  "name": "UnityAssetGovernance.Editor.Tests",
+  "rootNamespace": "UnityAssetGovernance.Tests",
+  "references": [
+    "UnityAssetGovernance.Editor"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}
