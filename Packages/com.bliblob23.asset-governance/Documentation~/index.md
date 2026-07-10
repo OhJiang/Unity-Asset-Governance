@@ -47,6 +47,13 @@ This warning applies to every asset type. It reports an issue when any part of t
 including parent folders or the file name, contains a normal space character. The rule is read-only
 because automatically renaming assets can affect external tools and workflows.
 
+## Manual Validation Window
+
+Open `Tools > Asset Governance`, select one or more assets or folders in the Project window, and
+click **Scan Selection**. Selected folders are expanded recursively through `AssetScanner`. The
+window displays asset issues separately from rule execution errors. Click an asset issue to select
+and ping the corresponding asset in the Project window.
+
 ## Planned Documentation
 
 - Installation

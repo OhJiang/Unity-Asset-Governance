@@ -23,14 +23,14 @@ Early development. Public APIs are not stable.
 - Recursive asset and folder scanning with duplicate removal and deterministic ordering
 - Synchronous rule execution with exception isolation and deterministic results
 - Built-in `UAG-NAME-001` rule for asset paths and file names containing spaces
+- Minimal Editor window for scanning selected assets or folders and locating reported assets
 
 ## Roadmap
 
-1. Minimal Editor window
-2. UI Texture Mipmap probe rule
-3. ScriptableObject configuration
-4. Automatic fixes
-5. CI integration
+1. UI Texture Mipmap probe rule
+2. ScriptableObject configuration
+3. Automatic fixes
+4. CI integration
 
 ## License
 
