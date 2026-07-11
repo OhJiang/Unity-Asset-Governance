@@ -51,11 +51,16 @@ profile stores references to the abstract base type, so a third-party rule can a
 typed settings class without editing `GovernanceProfile` or a central settings registry.
 
 The profile also contains generic **Rule States** entries. Each entry pairs a stable rule ID with an
-enabled flag. Rules without an entry are enabled by default, so newly installed third-party rules
-do not require boilerplate configuration. `RuleRunner` checks this state before calling
-`CanEvaluate()`, which means every built-in and custom rule receives the behavior automatically.
+enabled flag and an optional severity override. Rules without an entry are enabled by default and
+keep the severity produced by the rule, so newly installed third-party rules do not require
+boilerplate configuration. `RuleRunner` checks the enabled state before calling `CanEvaluate()` and
+applies severity overrides when collecting issues, which means every built-in and custom rule
+receives both behaviors automatically.
+
 Invalid or duplicate state entries are returned as `RuleExecutionStage.Configuration` errors and do
-not terminate the complete validation run.
+not terminate the complete validation run. If a severity override is invalid, the original issue is
+preserved and the configuration error is reported separately, so a broken project override cannot
+hide a real asset violation. Severity settings are only read when a rule actually produces an issue.
 
 ```csharp
 public sealed class MyRuleSettings : AssetRuleSettings
@@ -70,7 +75,7 @@ public sealed class MyRuleSettings : AssetRuleSettings
 ```
 
 Create the default profile from **Assets > Create > Asset Governance > Governance Profile**. Add a
-rule ID to Rule States only when its enabled value needs an explicit project override. Create
+rule ID to Rule States only when its enabled state or severity needs an explicit project override. Create
 `UAG-TEX-001` settings from **Assets > Create > Asset Governance > Rule Settings > UI Texture
 Mipmap Rule**, add that asset to the profile's Rule Settings list, then configure whether Sprite
 textures and/or project path prefixes identify UI textures.

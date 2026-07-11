@@ -86,6 +86,49 @@ namespace UnityAssetGovernance.Tests
         }
 
         [Test]
+        public void TryGetSeverityOverride_ReturnsFalseWhenRuleHasNoOverride()
+        {
+            SetRuleStates(profile, ("UAG-NAME-001", true));
+
+            var found = profile.TryGetSeverityOverride(
+                "UAG-NAME-001",
+                out RuleSeverity severity);
+
+            Assert.That(found, Is.False);
+            Assert.That(severity, Is.EqualTo(default(RuleSeverity)));
+        }
+
+        [Test]
+        public void TryGetSeverityOverride_ReturnsConfiguredSeverity()
+        {
+            SetRuleStatesWithSeverity(
+                profile,
+                ("UAG-NAME-001", true, true, RuleSeverity.Error));
+
+            var found = profile.TryGetSeverityOverride(
+                "UAG-NAME-001",
+                out RuleSeverity severity);
+
+            Assert.That(found, Is.True);
+            Assert.That(severity, Is.EqualTo(RuleSeverity.Error));
+        }
+
+        [Test]
+        public void TryGetSeverityOverride_RejectsInvalidSeverity()
+        {
+            SetRuleStatesWithSeverity(
+                profile,
+                ("UAG-NAME-001", true, true, (RuleSeverity)999));
+
+            var exception = Assert.Throws<InvalidOperationException>(() =>
+                profile.TryGetSeverityOverride(
+                    "UAG-NAME-001",
+                    out RuleSeverity _));
+
+            Assert.That(exception.Message, Does.Contain("invalid severity"));
+        }
+
+        [Test]
         public void TryGetRuleSettings_ReturnsFalseWhenRuleHasNoSettings()
         {
             var found = profile.TryGetRuleSettings(
@@ -178,6 +221,32 @@ namespace UnityAssetGovernance.Tests
             GovernanceProfile targetProfile,
             params (string RuleId, bool Enabled)[] states)
         {
+            var extendedStates = new (
+                string RuleId,
+                bool Enabled,
+                bool OverrideSeverity,
+                RuleSeverity Severity)[states.Length];
+
+            for (var index = 0; index < states.Length; index++)
+            {
+                extendedStates[index] = (
+                    states[index].RuleId,
+                    states[index].Enabled,
+                    false,
+                    RuleSeverity.Warning);
+            }
+
+            SetRuleStatesWithSeverity(targetProfile, extendedStates);
+        }
+
+        internal static void SetRuleStatesWithSeverity(
+            GovernanceProfile targetProfile,
+            params (
+                string RuleId,
+                bool Enabled,
+                bool OverrideSeverity,
+                RuleSeverity Severity)[] states)
+        {
             var serializedProfile = new SerializedObject(targetProfile);
             var property = serializedProfile.FindProperty("ruleStates");
             property.arraySize = states.Length;
@@ -187,6 +256,9 @@ namespace UnityAssetGovernance.Tests
                 var element = property.GetArrayElementAtIndex(index);
                 element.FindPropertyRelative("ruleId").stringValue = states[index].RuleId;
                 element.FindPropertyRelative("enabled").boolValue = states[index].Enabled;
+                element.FindPropertyRelative("overrideSeverity").boolValue =
+                    states[index].OverrideSeverity;
+                element.FindPropertyRelative("severity").intValue = (int)states[index].Severity;
             }
 
             serializedProfile.ApplyModifiedPropertiesWithoutUndo();

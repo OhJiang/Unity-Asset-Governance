@@ -37,6 +37,36 @@ namespace UnityAssetGovernance
         /// </summary>
         public bool IsRuleEnabled(string ruleId)
         {
+            var matchedState = FindRuleState(ruleId);
+            return matchedState == null || matchedState.Enabled;
+        }
+
+        /// <summary>
+        /// 尝试获取指定规则的项目严重级别覆盖。未配置或未启用覆盖时返回 false。
+        /// </summary>
+        public bool TryGetSeverityOverride(
+            string ruleId,
+            out RuleSeverity severity)
+        {
+            var matchedState = FindRuleState(ruleId);
+            if (matchedState == null || !matchedState.OverrideSeverity)
+            {
+                severity = default;
+                return false;
+            }
+
+            if (!Enum.IsDefined(typeof(RuleSeverity), matchedState.Severity))
+            {
+                throw new InvalidOperationException(
+                    $"Governance profile '{name}' contains an invalid severity for rule '{ruleId}'.");
+            }
+
+            severity = matchedState.Severity;
+            return true;
+        }
+
+        private RuleState FindRuleState(string ruleId)
+        {
             if (string.IsNullOrWhiteSpace(ruleId))
             {
                 throw new ArgumentException("A rule ID is required.", nameof(ruleId));
@@ -72,7 +102,7 @@ namespace UnityAssetGovernance
                 matchedState = candidate;
             }
 
-            return matchedState == null || matchedState.Enabled;
+            return matchedState;
         }
 
         /// <summary>

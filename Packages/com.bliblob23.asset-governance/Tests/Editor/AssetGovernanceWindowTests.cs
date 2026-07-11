@@ -108,6 +108,34 @@ namespace UnityAssetGovernance.Tests
         }
 
         [Test]
+        public void ScanSelection_DisplaysProfileSeverityOverride()
+        {
+            var profile = ScriptableObject.CreateInstance<GovernanceProfile>();
+            GovernanceProfileTests.SetRuleStatesWithSeverity(
+                profile,
+                ("UAG-NAME-001", true, true, RuleSeverity.Error));
+            AssetDatabase.CreateAsset(profile, ProfilePath);
+            AssetDatabase.SaveAssets();
+            Selection.activeObject = AssetDatabase.LoadMainAssetAtPath(FirstAssetPath);
+            var window = ScriptableObject.CreateInstance<AssetGovernanceWindow>();
+
+            try
+            {
+                var succeeded = window.ScanSelection();
+
+                Assert.That(succeeded, Is.True);
+                Assert.That(window.LastResult.ExecutionErrors, Is.Empty);
+                Assert.That(
+                    window.LastResult.Issues.Single(issue => issue.RuleId == "UAG-NAME-001").Severity,
+                    Is.EqualTo(RuleSeverity.Error));
+            }
+            finally
+            {
+                Object.DestroyImmediate(window);
+            }
+        }
+
+        [Test]
         public void LocateAsset_SelectsTheIssueAsset()
         {
             var expectedAsset = AssetDatabase.LoadMainAssetAtPath(SecondAssetPath);

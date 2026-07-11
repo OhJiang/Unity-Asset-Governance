@@ -130,6 +130,134 @@ namespace UnityAssetGovernance.Tests
         }
 
         [Test]
+        public void Run_AppliesConfiguredSeverityOverride()
+        {
+            var profile = ScriptableObject.CreateInstance<GovernanceProfile>();
+            GovernanceProfileTests.SetRuleStatesWithSeverity(
+                profile,
+                ("test.severity-override", true, true, RuleSeverity.Error));
+            var rule = CreateRule<SeverityOverrideRuleMarker>(
+                "test.severity-override",
+                _ => true,
+                asset => new[]
+                {
+                    CreateIssue(
+                        "test.severity-override",
+                        asset.AssetPath,
+                        RuleSeverity.Warning)
+                });
+
+            try
+            {
+                var result = RuleRunner.Run(
+                    new[] { CreateContext("Assets/Severity.png", profile) },
+                    new IAssetRule[] { rule });
+
+                Assert.That(result.Issues.Single().Severity, Is.EqualTo(RuleSeverity.Error));
+                Assert.That(result.ExecutionErrors, Is.Empty);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(profile);
+            }
+        }
+
+        [Test]
+        public void Run_PreservesOriginalSeverityWhenOverrideIsDisabled()
+        {
+            var profile = ScriptableObject.CreateInstance<GovernanceProfile>();
+            GovernanceProfileTests.SetRuleStatesWithSeverity(
+                profile,
+                ("test.severity-default", true, false, RuleSeverity.Error));
+            var rule = CreateRule<SeverityDefaultRuleMarker>(
+                "test.severity-default",
+                _ => true,
+                asset => new[]
+                {
+                    CreateIssue(
+                        "test.severity-default",
+                        asset.AssetPath,
+                        RuleSeverity.Warning)
+                });
+
+            try
+            {
+                var result = RuleRunner.Run(
+                    new[] { CreateContext("Assets/DefaultSeverity.png", profile) },
+                    new IAssetRule[] { rule });
+
+                Assert.That(result.Issues.Single().Severity, Is.EqualTo(RuleSeverity.Warning));
+                Assert.That(result.ExecutionErrors, Is.Empty);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(profile);
+            }
+        }
+
+        [Test]
+        public void Run_PreservesIssueAndReportsInvalidSeverityOverride()
+        {
+            var profile = ScriptableObject.CreateInstance<GovernanceProfile>();
+            GovernanceProfileTests.SetRuleStatesWithSeverity(
+                profile,
+                ("test.invalid-severity", true, true, (RuleSeverity)999));
+            var rule = CreateRule<InvalidSeverityRuleMarker>(
+                "test.invalid-severity",
+                _ => true,
+                asset => new[]
+                {
+                    CreateIssue(
+                        "test.invalid-severity",
+                        asset.AssetPath,
+                        RuleSeverity.Warning)
+                });
+
+            try
+            {
+                var result = RuleRunner.Run(
+                    new[] { CreateContext("Assets/InvalidSeverity.png", profile) },
+                    new IAssetRule[] { rule });
+
+                Assert.That(result.Issues.Single().Severity, Is.EqualTo(RuleSeverity.Warning));
+                Assert.That(result.ExecutionErrors, Has.Count.EqualTo(1));
+                Assert.That(result.ExecutionErrors[0].Stage, Is.EqualTo(RuleExecutionStage.Configuration));
+                Assert.That(result.ExecutionErrors[0].Exception.Message, Does.Contain("invalid severity"));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(profile);
+            }
+        }
+
+        [Test]
+        public void Run_DoesNotReadSeverityOverrideWhenRuleProducesNoIssues()
+        {
+            var profile = ScriptableObject.CreateInstance<GovernanceProfile>();
+            GovernanceProfileTests.SetRuleStatesWithSeverity(
+                profile,
+                ("test.no-issues", true, true, (RuleSeverity)999));
+            var rule = CreateRule<NoIssueSeverityRuleMarker>(
+                "test.no-issues",
+                _ => true,
+                _ => Array.Empty<ValidationIssue>());
+
+            try
+            {
+                var result = RuleRunner.Run(
+                    new[] { CreateContext("Assets/NoIssues.png", profile) },
+                    new IAssetRule[] { rule });
+
+                Assert.That(result.Issues, Is.Empty);
+                Assert.That(result.ExecutionErrors, Is.Empty);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(profile);
+            }
+        }
+
+        [Test]
         public void Run_IsolatesCanEvaluateExceptionAndContinues()
         {
             var context = CreateContext("Assets/Textures/Hero.png");
@@ -273,11 +401,14 @@ namespace UnityAssetGovernance.Tests
                 governanceProfile);
         }
 
-        private static ValidationIssue CreateIssue(string ruleId, string assetPath)
+        private static ValidationIssue CreateIssue(
+            string ruleId,
+            string assetPath,
+            RuleSeverity severity = RuleSeverity.Warning)
         {
             return new ValidationIssue(
                 ruleId,
-                RuleSeverity.Warning,
+                severity,
                 assetPath,
                 "Test issue.");
         }
@@ -351,6 +482,22 @@ namespace UnityAssetGovernance.Tests
         }
 
         private sealed class ConfigurationHealthyRuleMarker
+        {
+        }
+
+        private sealed class SeverityOverrideRuleMarker
+        {
+        }
+
+        private sealed class SeverityDefaultRuleMarker
+        {
+        }
+
+        private sealed class InvalidSeverityRuleMarker
+        {
+        }
+
+        private sealed class NoIssueSeverityRuleMarker
         {
         }
 

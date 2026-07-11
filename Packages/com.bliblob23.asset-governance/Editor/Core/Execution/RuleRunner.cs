@@ -155,6 +155,10 @@ namespace UnityAssetGovernance
                 return;
             }
 
+            var severityResolved = false;
+            var hasSeverityOverride = false;
+            var severityOverride = default(RuleSeverity);
+
             try
             {
                 foreach (var issue in ruleIssues)
@@ -169,7 +173,19 @@ namespace UnityAssetGovernance
                         continue;
                     }
 
-                    issues.Add(issue);
+                    if (!severityResolved)
+                    {
+                        hasSeverityOverride = TryGetSeverityOverride(
+                            preparedRule,
+                            context,
+                            executionErrors,
+                            out severityOverride);
+                        severityResolved = true;
+                    }
+
+                    issues.Add(hasSeverityOverride
+                        ? CopyIssueWithSeverity(issue, severityOverride)
+                        : issue);
                 }
             }
             catch (Exception exception)
@@ -201,6 +217,52 @@ namespace UnityAssetGovernance
                     exception));
                 return false;
             }
+        }
+
+        private static bool TryGetSeverityOverride(
+            PreparedRule preparedRule,
+            AssetContext context,
+            ICollection<RuleExecutionError> executionErrors,
+            out RuleSeverity severity)
+        {
+            if (context.GovernanceProfile == null)
+            {
+                severity = default;
+                return false;
+            }
+
+            try
+            {
+                return context.GovernanceProfile.TryGetSeverityOverride(
+                    preparedRule.Descriptor.Id,
+                    out severity);
+            }
+            catch (Exception exception)
+            {
+                executionErrors.Add(new RuleExecutionError(
+                    preparedRule.Descriptor.Id,
+                    context.AssetPath,
+                    RuleExecutionStage.Configuration,
+                    exception));
+                severity = default;
+                return false;
+            }
+        }
+
+        private static ValidationIssue CopyIssueWithSeverity(
+            ValidationIssue issue,
+            RuleSeverity severity)
+        {
+            if (issue.Severity == severity)
+            {
+                return issue;
+            }
+
+            return new ValidationIssue(
+                issue.RuleId,
+                severity,
+                issue.AssetPath,
+                issue.Message);
         }
 
         private static void AddEvaluationError(
