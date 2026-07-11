@@ -140,6 +140,15 @@ project-specific UI path prefixes without hard-coding business directories in th
 first safely fixable built-in rule: its explicit fix disables `TextureImporter.mipmapEnabled`, saves
 and reimports the texture, and is followed by validation again in the Editor window.
 
+### UAG-TEX-002: Texture Read/Write Must Be Disabled
+
+This warning applies to every asset imported through `TextureImporter`. It reports an issue when
+`TextureImporter.isReadable` is enabled because retaining a CPU-readable texture copy should be an
+explicit project decision. Assets that intentionally require runtime pixel access can be excluded
+through a `GovernanceProfile` Whitelist Entry for rule ID `UAG-TEX-002`; the rule does not duplicate
+that shared exception mechanism in separate settings. Its explicit safe fix disables Read/Write,
+saves and reimports the texture, and the Editor window then validates the current selection again.
+
 ## Manual Validation Window
 
 Open `Tools > Asset Governance`, select one or more assets or folders in the Project window, and

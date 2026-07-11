@@ -30,5 +30,6 @@ All notable changes to this package will be documented in this file.
 - Extensible `IFixableAssetRule` contract with framework-confirmed `ValidationIssue.CanFix` state.
 - Exception-isolated `FixRunner` with stale-issue capability checks and structured fix results.
 - Safe automatic Mipmap disabling for the built-in `UAG-TEX-001` rule.
+- Built-in `UAG-TEX-002` rule with whitelist support and safe automatic Texture Read/Write disabling.
 - Single-issue Editor window fixes followed by automatic selection rescanning.
 - Public rule type filtering so non-public test and implementation helpers are ignored during `TypeCache` discovery.
