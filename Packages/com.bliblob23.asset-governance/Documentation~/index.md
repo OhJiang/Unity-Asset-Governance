@@ -128,6 +128,10 @@ precedence, allowing broad defaults to be refined for specific directories.
 Create `UAG-MODEL-001` settings from **Assets > Create > Asset Governance > Rule Settings > Model
 Scale Factor Rule** to replace its built-in expected value of 1 or add model and folder path
 overrides. Model settings use the same longest matching path behavior.
+Create `UAG-AUDIO-001` settings from **Assets > Create > Asset Governance > Rule Settings > Short
+Audio Streaming Rule**, add project-specific short-audio path prefixes, and select the non-Streaming
+Load Type used by explicit fixes. The package intentionally has no built-in SFX directory because
+business paths belong in project configuration.
 
 ## Built-in Rules
 
@@ -194,6 +198,18 @@ project decision. Models that intentionally require runtime mesh access can reus
 `GovernanceProfile` Whitelist Entry for rule ID `UAG-MODEL-002`; the rule does not introduce a
 separate exception list. Its explicit safe fix disables Read/Write, saves and reimports the model,
 and the Editor window then validates the current selection again.
+
+### UAG-AUDIO-001: Short Audio Must Not Use Streaming
+
+This error applies only to clips imported through `AudioImporter` whose paths match a prefix in
+`ShortAudioStreamingRuleSettings`. No path is assumed when settings are missing, so project-specific
+SFX directories are never hard-coded into the rule. It reports an issue when the default sample
+settings use `AudioClipLoadType.Streaming`. The settings also select whether an explicit fix changes
+the clip to `DecompressOnLoad` or `CompressedInMemory`; selecting Streaming as the replacement,
+invalid project paths, empty entries, and duplicate normalized paths become explicit execution
+errors. The fix updates the importer's sample settings, saves and reimports the clip, and is followed
+by validation again. Intentional exceptions can reuse the shared whitelist for rule ID
+`UAG-AUDIO-001`.
 
 ## Manual Validation Window
 

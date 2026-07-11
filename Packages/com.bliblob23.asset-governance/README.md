@@ -29,6 +29,7 @@ Early development. Public APIs are not stable.
 - Built-in `UAG-TEX-004` rule requiring Normal Map sRGB sampling to be disabled
 - Built-in `UAG-MODEL-001` rule enforcing configurable Model Scale Factor values
 - Built-in `UAG-MODEL-002` rule requiring model Read/Write to be disabled unless whitelisted
+- Built-in `UAG-AUDIO-001` rule preventing configured short audio from using Streaming
 - Minimal Editor window for scanning selected assets or folders and locating reported assets
 - Strongly typed `ScriptableObject` rule settings through `GovernanceProfile`
 - Project-wide rule enable/disable states and optional severity overrides enforced centrally by `RuleRunner`
@@ -41,6 +42,7 @@ Early development. Public APIs are not stable.
 - Explicit Texture Max Size correction for `UAG-TEX-003`
 - Safe automatic sRGB sampling disabling for `UAG-TEX-004`
 - Safe automatic model Read/Write disabling for `UAG-MODEL-002`
+- Configurable non-Streaming correction for `UAG-AUDIO-001`
 - Automatic discovery of the single project default profile, with explicit duplicate-profile errors
 - Configurable UI texture classification by importer type and project path prefixes
 
@@ -56,8 +58,10 @@ Early development. Public APIs are not stable.
 8. Set a project default and optional asset or folder path overrides. When multiple paths match, the most specific path wins.
 9. Create **Assets > Create > Asset Governance > Rule Settings > Model Scale Factor Rule** and add it to **Rule Settings** when the default expected value of 1 is not suitable.
 10. Set a project default and optional model or folder path overrides. Scale Factor findings are intentionally read-only because changing them can alter scene dimensions.
+11. Create **Assets > Create > Asset Governance > Rule Settings > Short Audio Streaming Rule** and add it to **Rule Settings**.
+12. Add project-specific short-audio path prefixes and choose the non-Streaming Load Type used by explicit fixes. No short-audio business path is built into the package.
 
-When no profile or no `UAG-TEX-001` settings exist, the built-in rule keeps its safe default of treating Sprite textures as UI textures. `UAG-TEX-002` applies to every `TextureImporter`; add an asset or folder path with rule ID `UAG-TEX-002` to Whitelist Entries only when runtime CPU texture access is intentional. `UAG-TEX-003` applies a default Max Size limit of 2048 unless strongly typed settings provide a different default or path-specific override. `UAG-TEX-004` applies only to textures explicitly imported as Normal Maps; intentional exceptions can reuse the shared rule whitelist. `UAG-MODEL-001` expects Model Scale Factor 1 by default and supports strongly typed default and path-specific values. `UAG-MODEL-002` applies to every `ModelImporter`; whitelist only models that intentionally require runtime CPU mesh access. Custom rules can derive their own settings from `AssetRuleSettings`; the core profile does not need to know concrete third-party settings types.
+When no profile or no `UAG-TEX-001` settings exist, the built-in rule keeps its safe default of treating Sprite textures as UI textures. `UAG-TEX-002` applies to every `TextureImporter`; add an asset or folder path with rule ID `UAG-TEX-002` to Whitelist Entries only when runtime CPU texture access is intentional. `UAG-TEX-003` applies a default Max Size limit of 2048 unless strongly typed settings provide a different default or path-specific override. `UAG-TEX-004` applies only to textures explicitly imported as Normal Maps; intentional exceptions can reuse the shared rule whitelist. `UAG-MODEL-001` expects Model Scale Factor 1 by default and supports strongly typed default and path-specific values. `UAG-MODEL-002` applies to every `ModelImporter`; whitelist only models that intentionally require runtime CPU mesh access. `UAG-AUDIO-001` runs only when strongly typed settings classify a clip by project path, and fixes Streaming clips to the configured non-Streaming Load Type. Custom rules can derive their own settings from `AssetRuleSettings`; the core profile does not need to know concrete third-party settings types.
 
 ## Roadmap
 
