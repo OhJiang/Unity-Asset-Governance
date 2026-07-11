@@ -132,6 +132,9 @@ Create `UAG-AUDIO-001` settings from **Assets > Create > Asset Governance > Rule
 Audio Streaming Rule**, add project-specific short-audio path prefixes, and select the non-Streaming
 Load Type used by explicit fixes. The package intentionally has no built-in SFX directory because
 business paths belong in project configuration.
+Create `UAG-AUDIO-002` settings from **Assets > Create > Asset Governance > Rule Settings > Long
+Audio Streaming Rule** and add project-specific BGM or long-audio path prefixes. Keep short-audio
+and long-audio classifications from overlapping because their Load Type requirements are opposite.
 
 ## Built-in Rules
 
@@ -210,6 +213,17 @@ invalid project paths, empty entries, and duplicate normalized paths become expl
 errors. The fix updates the importer's sample settings, saves and reimports the clip, and is followed
 by validation again. Intentional exceptions can reuse the shared whitelist for rule ID
 `UAG-AUDIO-001`.
+
+### UAG-AUDIO-002: Long Audio Must Use Streaming
+
+This warning applies only to clips imported through `AudioImporter` whose paths match a prefix in
+`LongAudioStreamingRuleSettings`. The rule keeps BGM and long-audio classification independent from
+short-audio configuration and assumes no project directory when settings are missing. It reports an
+issue when the default sample settings use any Load Type other than `AudioClipLoadType.Streaming`.
+Invalid project paths, empty entries, and duplicate normalized paths become explicit execution
+errors. The explicit fix changes only the Load Type to Streaming, saves and reimports the clip, and
+is followed by validation again. Intentional exceptions can reuse the shared whitelist for rule ID
+`UAG-AUDIO-002`.
 
 ## Manual Validation Window
 

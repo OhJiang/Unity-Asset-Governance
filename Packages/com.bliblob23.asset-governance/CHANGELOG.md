@@ -36,5 +36,6 @@ All notable changes to this package will be documented in this file.
 - Built-in `UAG-MODEL-001` rule with strongly typed default and longest-path Model Scale Factor expectations.
 - Built-in `UAG-MODEL-002` rule with shared whitelist support and safe automatic Model Read/Write disabling.
 - Built-in `UAG-AUDIO-001` rule with strongly typed short-audio path classification and configurable non-Streaming correction.
+- Built-in `UAG-AUDIO-002` rule with independent strongly typed long-audio path classification and safe Streaming correction.
 - Single-issue Editor window fixes followed by automatic selection rescanning.
 - Public rule type filtering so non-public test and implementation helpers are ignored during `TypeCache` discovery.
