@@ -33,6 +33,103 @@ namespace UnityAssetGovernance.Tests
         }
 
         [Test]
+        public void Run_SkipsDisabledRuleBeforeCanEvaluate()
+        {
+            var profile = ScriptableObject.CreateInstance<GovernanceProfile>();
+            GovernanceProfileTests.SetRuleStates(profile, ("test.disabled", false));
+            var canEvaluateCalled = false;
+            var evaluateCalled = false;
+            var rule = CreateRule<DisabledRuleMarker>(
+                "test.disabled",
+                _ =>
+                {
+                    canEvaluateCalled = true;
+                    return true;
+                },
+                _ =>
+                {
+                    evaluateCalled = true;
+                    return Array.Empty<ValidationIssue>();
+                });
+
+            try
+            {
+                var result = RuleRunner.Run(
+                    new[] { CreateContext("Assets/Disabled.png", profile) },
+                    new IAssetRule[] { rule });
+
+                Assert.That(canEvaluateCalled, Is.False);
+                Assert.That(evaluateCalled, Is.False);
+                Assert.That(result.Issues, Is.Empty);
+                Assert.That(result.ExecutionErrors, Is.Empty);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(profile);
+            }
+        }
+
+        [Test]
+        public void Run_ExecutesExplicitlyEnabledRule()
+        {
+            var profile = ScriptableObject.CreateInstance<GovernanceProfile>();
+            GovernanceProfileTests.SetRuleStates(profile, ("test.enabled", true));
+            var rule = CreateRule<EnabledRuleMarker>(
+                "test.enabled",
+                _ => true,
+                asset => new[] { CreateIssue("test.enabled", asset.AssetPath) });
+
+            try
+            {
+                var result = RuleRunner.Run(
+                    new[] { CreateContext("Assets/Enabled.png", profile) },
+                    new IAssetRule[] { rule });
+
+                Assert.That(result.Issues.Single().RuleId, Is.EqualTo("test.enabled"));
+                Assert.That(result.ExecutionErrors, Is.Empty);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(profile);
+            }
+        }
+
+        [Test]
+        public void Run_IsolatesDuplicateRuleStateErrorAndContinuesOtherRules()
+        {
+            var profile = ScriptableObject.CreateInstance<GovernanceProfile>();
+            GovernanceProfileTests.SetRuleStates(
+                profile,
+                ("test.duplicate-state", true),
+                ("test.duplicate-state", false));
+            var invalidRule = CreateRule<DuplicateStateRuleMarker>(
+                "test.duplicate-state",
+                _ => throw new InvalidOperationException("Disabled configuration must be checked first."),
+                _ => Array.Empty<ValidationIssue>());
+            var healthyRule = CreateRule<ConfigurationHealthyRuleMarker>(
+                "test.configuration-healthy",
+                _ => true,
+                asset => new[] { CreateIssue("test.configuration-healthy", asset.AssetPath) });
+
+            try
+            {
+                var result = RuleRunner.Run(
+                    new[] { CreateContext("Assets/Configured.png", profile) },
+                    new IAssetRule[] { invalidRule, healthyRule });
+
+                Assert.That(result.Issues.Single().RuleId, Is.EqualTo("test.configuration-healthy"));
+                Assert.That(result.ExecutionErrors, Has.Count.EqualTo(1));
+                Assert.That(result.ExecutionErrors[0].RuleId, Is.EqualTo("test.duplicate-state"));
+                Assert.That(result.ExecutionErrors[0].Stage, Is.EqualTo(RuleExecutionStage.Configuration));
+                Assert.That(result.ExecutionErrors[0].Exception.Message, Does.Contain("duplicate states"));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(profile);
+            }
+        }
+
+        [Test]
         public void Run_IsolatesCanEvaluateExceptionAndContinues()
         {
             var context = CreateContext("Assets/Textures/Hero.png");
@@ -162,7 +259,9 @@ namespace UnityAssetGovernance.Tests
                 Throws.TypeOf<NotSupportedException>());
         }
 
-        private static AssetContext CreateContext(string assetPath)
+        private static AssetContext CreateContext(
+            string assetPath,
+            GovernanceProfile governanceProfile = null)
         {
             return new AssetContext(
                 "test-guid",
@@ -170,7 +269,8 @@ namespace UnityAssetGovernance.Tests
                 typeof(Texture2D),
                 null,
                 null,
-                BuildTarget.StandaloneOSX);
+                BuildTarget.StandaloneOSX,
+                governanceProfile);
         }
 
         private static ValidationIssue CreateIssue(string ruleId, string assetPath)
@@ -235,6 +335,22 @@ namespace UnityAssetGovernance.Tests
         }
 
         private sealed class SkippedRuleMarker
+        {
+        }
+
+        private sealed class DisabledRuleMarker
+        {
+        }
+
+        private sealed class EnabledRuleMarker
+        {
+        }
+
+        private sealed class DuplicateStateRuleMarker
+        {
+        }
+
+        private sealed class ConfigurationHealthyRuleMarker
         {
         }
 

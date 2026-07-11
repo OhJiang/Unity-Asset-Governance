@@ -109,6 +109,11 @@ namespace UnityAssetGovernance
             ICollection<ValidationIssue> issues,
             ICollection<RuleExecutionError> executionErrors)
         {
+            if (!IsRuleEnabled(preparedRule, context, executionErrors))
+            {
+                return;
+            }
+
             bool canEvaluate;
             try
             {
@@ -170,6 +175,31 @@ namespace UnityAssetGovernance
             catch (Exception exception)
             {
                 AddEvaluationError(preparedRule, context, exception, executionErrors);
+            }
+        }
+
+        private static bool IsRuleEnabled(
+            PreparedRule preparedRule,
+            AssetContext context,
+            ICollection<RuleExecutionError> executionErrors)
+        {
+            if (context.GovernanceProfile == null)
+            {
+                return true;
+            }
+
+            try
+            {
+                return context.GovernanceProfile.IsRuleEnabled(preparedRule.Descriptor.Id);
+            }
+            catch (Exception exception)
+            {
+                executionErrors.Add(new RuleExecutionError(
+                    preparedRule.Descriptor.Id,
+                    context.AssetPath,
+                    RuleExecutionStage.Configuration,
+                    exception));
+                return false;
             }
         }
 

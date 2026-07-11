@@ -26,6 +26,7 @@ Early development. Public APIs are not stable.
 - Built-in `UAG-TEX-001` rule requiring configured UI texture mipmaps to be disabled
 - Minimal Editor window for scanning selected assets or folders and locating reported assets
 - Strongly typed `ScriptableObject` rule settings through `GovernanceProfile`
+- Project-wide rule enable and disable states enforced centrally by `RuleRunner`
 - Automatic discovery of the single project default profile, with explicit duplicate-profile errors
 - Configurable UI texture classification by importer type and project path prefixes
 
@@ -33,14 +34,15 @@ Early development. Public APIs are not stable.
 
 1. Create **Assets > Create > Asset Governance > Governance Profile**. The MVP supports one profile per project.
 2. Create **Assets > Create > Asset Governance > Rule Settings > UI Texture Mipmap Rule**.
-3. Add the rule settings asset to the profile's **Rule Settings** list.
-4. Keep Sprite classification enabled, add project-specific UI path prefixes, or combine both.
+3. Add a rule ID to the profile's **Rule States** list when a rule must be explicitly enabled or disabled. Rules without a state entry remain enabled by default.
+4. Add the UI texture settings asset to the profile's **Rule Settings** list.
+5. Keep Sprite classification enabled, add project-specific UI path prefixes, or combine both.
 
 When no profile or no `UAG-TEX-001` settings exist, the built-in rule keeps its safe default of treating Sprite textures as UI textures. Custom rules can derive their own settings from `AssetRuleSettings`; the core profile does not need to know concrete third-party settings types.
 
 ## Roadmap
 
-1. Common profile options: rule enablement, severity overrides, exclusions, and whitelist
+1. Common profile options: severity overrides, exclusions, and whitelist
 2. Automatic fixes
 3. CI integration
 

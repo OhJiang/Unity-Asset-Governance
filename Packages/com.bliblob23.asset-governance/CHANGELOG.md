@@ -22,3 +22,5 @@ All notable changes to this package will be documented in this file.
 - Strongly typed `AssetRuleSettings` extension point and project-level `GovernanceProfile`.
 - Automatic unique default profile lookup plus explicit profile injection through `AssetScanner`.
 - Configurable Sprite and path-prefix classification for the built-in `UAG-TEX-001` rule.
+- Project-wide rule enable and disable states with enabled-by-default behavior.
+- Central rule-state enforcement and isolated configuration-stage execution errors in `RuleRunner`.

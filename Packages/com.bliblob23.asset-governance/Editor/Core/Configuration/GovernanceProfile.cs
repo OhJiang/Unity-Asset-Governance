@@ -14,13 +14,66 @@ namespace UnityAssetGovernance
     public sealed class GovernanceProfile : ScriptableObject
     {
         [SerializeField]
+        private List<RuleState> ruleStates = new List<RuleState>();
+
+        [SerializeField]
         private List<AssetRuleSettings> ruleSettings = new List<AssetRuleSettings>();
+
+        /// <summary>
+        /// 获取当前 Profile 中的规则启用状态只读视图。
+        /// </summary>
+        public IReadOnlyList<RuleState> RuleStates =>
+            new ReadOnlyCollection<RuleState>(ruleStates);
 
         /// <summary>
         /// 获取当前 Profile 引用的规则配置只读视图。
         /// </summary>
         public IReadOnlyList<AssetRuleSettings> RuleSettings =>
             new ReadOnlyCollection<AssetRuleSettings>(ruleSettings);
+
+        /// <summary>
+        /// 获取指定规则是否启用。未配置的规则默认启用。
+        /// 空规则 ID、空状态条目和重复规则 ID 会产生明确异常。
+        /// </summary>
+        public bool IsRuleEnabled(string ruleId)
+        {
+            if (string.IsNullOrWhiteSpace(ruleId))
+            {
+                throw new ArgumentException("A rule ID is required.", nameof(ruleId));
+            }
+
+            RuleState matchedState = null;
+
+            foreach (var candidate in ruleStates)
+            {
+                if (candidate == null)
+                {
+                    throw new InvalidOperationException(
+                        $"Governance profile '{name}' contains a missing rule state.");
+                }
+
+                if (string.IsNullOrWhiteSpace(candidate.RuleId))
+                {
+                    throw new InvalidOperationException(
+                        $"Governance profile '{name}' contains a rule state with an empty rule ID.");
+                }
+
+                if (!string.Equals(candidate.RuleId, ruleId, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                if (matchedState != null)
+                {
+                    throw new InvalidOperationException(
+                        $"Governance profile '{name}' contains duplicate states for rule '{ruleId}'.");
+                }
+
+                matchedState = candidate;
+            }
+
+            return matchedState == null || matchedState.Enabled;
+        }
 
         /// <summary>
         /// 尝试按规则 ID 获取指定强类型配置。

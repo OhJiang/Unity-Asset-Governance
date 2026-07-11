@@ -6,6 +6,7 @@ namespace UnityAssetGovernance
     public enum RuleExecutionStage
     {
         CanEvaluate = 0,
-        Evaluate = 1
+        Evaluate = 1,
+        Configuration = 2
     }
 }

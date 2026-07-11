@@ -13,6 +13,7 @@ namespace UnityAssetGovernance.Tests
         private const string TestFolder = "Assets/__Unity Asset Governance Window Tests";
         private const string FirstAssetPath = TestFolder + "/A.txt";
         private const string SecondAssetPath = TestFolder + "/B.txt";
+        private const string ProfilePath = TestFolder + "/GovernanceProfile.asset";
 
         private Object[] _previousSelection;
 
@@ -73,6 +74,32 @@ namespace UnityAssetGovernance.Tests
                     window.LastResult.Issues.Single(issue => issue.RuleId == "UAG-NAME-001").AssetPath,
                     Is.EqualTo(FirstAssetPath));
                 Assert.That(window.StatusMessage, Is.EqualTo("Scanned 1 asset(s)."));
+            }
+            finally
+            {
+                Object.DestroyImmediate(window);
+            }
+        }
+
+        [Test]
+        public void ScanSelection_UsesDefaultProfileRuleState()
+        {
+            var profile = ScriptableObject.CreateInstance<GovernanceProfile>();
+            GovernanceProfileTests.SetRuleStates(profile, ("UAG-NAME-001", false));
+            AssetDatabase.CreateAsset(profile, ProfilePath);
+            AssetDatabase.SaveAssets();
+            Selection.activeObject = AssetDatabase.LoadMainAssetAtPath(FirstAssetPath);
+            var window = ScriptableObject.CreateInstance<AssetGovernanceWindow>();
+
+            try
+            {
+                var succeeded = window.ScanSelection();
+
+                Assert.That(succeeded, Is.True);
+                Assert.That(window.LastResult.ExecutionErrors, Is.Empty);
+                Assert.That(
+                    window.LastResult.Issues.Any(issue => issue.RuleId == "UAG-NAME-001"),
+                    Is.False);
             }
             finally
             {

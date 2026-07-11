@@ -47,6 +47,45 @@ namespace UnityAssetGovernance.Tests
         }
 
         [Test]
+        public void IsRuleEnabled_ReturnsTrueWhenRuleHasNoState()
+        {
+            Assert.That(profile.IsRuleEnabled("UAG-NAME-001"), Is.True);
+        }
+
+        [Test]
+        public void IsRuleEnabled_ReturnsConfiguredState()
+        {
+            SetRuleStates(profile, ("UAG-NAME-001", false));
+
+            Assert.That(profile.IsRuleEnabled("UAG-NAME-001"), Is.False);
+        }
+
+        [Test]
+        public void IsRuleEnabled_RejectsDuplicateRuleIds()
+        {
+            SetRuleStates(
+                profile,
+                ("UAG-NAME-001", true),
+                ("UAG-NAME-001", false));
+
+            var exception = Assert.Throws<InvalidOperationException>(() =>
+                profile.IsRuleEnabled("UAG-NAME-001"));
+
+            Assert.That(exception.Message, Does.Contain("duplicate states"));
+        }
+
+        [Test]
+        public void IsRuleEnabled_RejectsEmptyRuleId()
+        {
+            SetRuleStates(profile, (string.Empty, true));
+
+            var exception = Assert.Throws<InvalidOperationException>(() =>
+                profile.IsRuleEnabled("UAG-NAME-001"));
+
+            Assert.That(exception.Message, Does.Contain("empty rule ID"));
+        }
+
+        [Test]
         public void TryGetRuleSettings_ReturnsFalseWhenRuleHasNoSettings()
         {
             var found = profile.TryGetRuleSettings(
@@ -133,6 +172,24 @@ namespace UnityAssetGovernance.Tests
                 }));
 
             Assert.That(exception.Message, Does.Contain("Assets/AProfile.asset, Assets/ZProfile.asset"));
+        }
+
+        internal static void SetRuleStates(
+            GovernanceProfile targetProfile,
+            params (string RuleId, bool Enabled)[] states)
+        {
+            var serializedProfile = new SerializedObject(targetProfile);
+            var property = serializedProfile.FindProperty("ruleStates");
+            property.arraySize = states.Length;
+
+            for (var index = 0; index < states.Length; index++)
+            {
+                var element = property.GetArrayElementAtIndex(index);
+                element.FindPropertyRelative("ruleId").stringValue = states[index].RuleId;
+                element.FindPropertyRelative("enabled").boolValue = states[index].Enabled;
+            }
+
+            serializedProfile.ApplyModifiedPropertiesWithoutUndo();
         }
 
         internal static void SetRuleSettings(

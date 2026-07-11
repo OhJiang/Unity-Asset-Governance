@@ -50,6 +50,13 @@ Rule-specific settings derive from `AssetRuleSettings` and declare their stable 
 profile stores references to the abstract base type, so a third-party rule can add a new strongly
 typed settings class without editing `GovernanceProfile` or a central settings registry.
 
+The profile also contains generic **Rule States** entries. Each entry pairs a stable rule ID with an
+enabled flag. Rules without an entry are enabled by default, so newly installed third-party rules
+do not require boilerplate configuration. `RuleRunner` checks this state before calling
+`CanEvaluate()`, which means every built-in and custom rule receives the behavior automatically.
+Invalid or duplicate state entries are returned as `RuleExecutionStage.Configuration` errors and do
+not terminate the complete validation run.
+
 ```csharp
 public sealed class MyRuleSettings : AssetRuleSettings
 {
@@ -62,7 +69,8 @@ public sealed class MyRuleSettings : AssetRuleSettings
 }
 ```
 
-Create the default profile from **Assets > Create > Asset Governance > Governance Profile**. Create
+Create the default profile from **Assets > Create > Asset Governance > Governance Profile**. Add a
+rule ID to Rule States only when its enabled value needs an explicit project override. Create
 `UAG-TEX-001` settings from **Assets > Create > Asset Governance > Rule Settings > UI Texture
 Mipmap Rule**, add that asset to the profile's Rule Settings list, then configure whether Sprite
 textures and/or project path prefixes identify UI textures.
