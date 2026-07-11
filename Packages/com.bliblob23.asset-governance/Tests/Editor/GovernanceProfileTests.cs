@@ -47,6 +47,60 @@ namespace UnityAssetGovernance.Tests
         }
 
         [Test]
+        public void IsAssetPathExcluded_ReturnsFalseWhenNoPathIsConfigured()
+        {
+            Assert.That(profile.IsAssetPathExcluded("Assets/Textures/Icon.png"), Is.False);
+        }
+
+        [Test]
+        public void IsAssetPathExcluded_MatchesExactAssetPath()
+        {
+            SetExcludedPaths(profile, "Assets/Textures/Icon.png");
+
+            Assert.That(profile.IsAssetPathExcluded("Assets/Textures/Icon.png"), Is.True);
+        }
+
+        [Test]
+        public void IsAssetPathExcluded_MatchesDescendantsAfterNormalizingSeparators()
+        {
+            SetExcludedPaths(profile, " Assets\\Generated\\ ");
+
+            Assert.That(
+                profile.IsAssetPathExcluded("Assets/Generated/Nested/Output.asset"),
+                Is.True);
+        }
+
+        [Test]
+        public void IsAssetPathExcluded_DoesNotMatchSimilarSiblingPath()
+        {
+            SetExcludedPaths(profile, "Assets/UI");
+
+            Assert.That(profile.IsAssetPathExcluded("Assets/UIImage/Icon.png"), Is.False);
+        }
+
+        [Test]
+        public void IsAssetPathExcluded_RejectsEmptyConfiguredPath()
+        {
+            SetExcludedPaths(profile, "  ");
+
+            var exception = Assert.Throws<InvalidOperationException>(() =>
+                profile.IsAssetPathExcluded("Assets/Textures/Icon.png"));
+
+            Assert.That(exception.Message, Does.Contain("empty excluded path"));
+        }
+
+        [Test]
+        public void IsAssetPathExcluded_RejectsPathOutsideAssetsAndPackages()
+        {
+            SetExcludedPaths(profile, "Library/Generated");
+
+            var exception = Assert.Throws<InvalidOperationException>(() =>
+                profile.IsAssetPathExcluded("Assets/Textures/Icon.png"));
+
+            Assert.That(exception.Message, Does.Contain("must start with 'Assets' or 'Packages'"));
+        }
+
+        [Test]
         public void IsRuleEnabled_ReturnsTrueWhenRuleHasNoState()
         {
             Assert.That(profile.IsRuleEnabled("UAG-NAME-001"), Is.True);
@@ -215,6 +269,22 @@ namespace UnityAssetGovernance.Tests
                 }));
 
             Assert.That(exception.Message, Does.Contain("Assets/AProfile.asset, Assets/ZProfile.asset"));
+        }
+
+        internal static void SetExcludedPaths(
+            GovernanceProfile targetProfile,
+            params string[] paths)
+        {
+            var serializedProfile = new SerializedObject(targetProfile);
+            var property = serializedProfile.FindProperty("excludedPaths");
+            property.arraySize = paths.Length;
+
+            for (var index = 0; index < paths.Length; index++)
+            {
+                property.GetArrayElementAtIndex(index).stringValue = paths[index];
+            }
+
+            serializedProfile.ApplyModifiedPropertiesWithoutUndo();
         }
 
         internal static void SetRuleStates(

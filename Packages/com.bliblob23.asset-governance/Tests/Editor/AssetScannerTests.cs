@@ -65,6 +65,63 @@ namespace UnityAssetGovernance.Tests
         }
 
         [Test]
+        public void Scan_SkipsAssetsUnderProfileExcludedPath()
+        {
+            var profile = ScriptableObject.CreateInstance<GovernanceProfile>();
+            GovernanceProfileTests.SetExcludedPaths(profile, NestedFolder);
+
+            try
+            {
+                var contexts = AssetScanner.Scan(new[] { TestFolder }, profile);
+
+                Assert.That(
+                    contexts.Select(context => context.AssetPath),
+                    Is.EqualTo(new[] { FirstAssetPath }));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(profile);
+            }
+        }
+
+        [Test]
+        public void Scan_SkipsExactAssetConfiguredByProfile()
+        {
+            var profile = ScriptableObject.CreateInstance<GovernanceProfile>();
+            GovernanceProfileTests.SetExcludedPaths(profile, FirstAssetPath);
+
+            try
+            {
+                var contexts = AssetScanner.Scan(new[] { FirstAssetPath }, profile);
+
+                Assert.That(contexts, Is.Empty);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(profile);
+            }
+        }
+
+        [Test]
+        public void Scan_RejectsInvalidExcludedPathConfiguration()
+        {
+            var profile = ScriptableObject.CreateInstance<GovernanceProfile>();
+            GovernanceProfileTests.SetExcludedPaths(profile, "Library/Generated");
+
+            try
+            {
+                var exception = Assert.Throws<InvalidOperationException>(() =>
+                    AssetScanner.Scan(new[] { FirstAssetPath }, profile));
+
+                Assert.That(exception.Message, Does.Contain("invalid excluded path"));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(profile);
+            }
+        }
+
+        [Test]
         public void Scan_ReturnsReadOnlyCollection()
         {
             var contexts = AssetScanner.Scan(new[] { FirstAssetPath });

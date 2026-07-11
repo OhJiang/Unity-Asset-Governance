@@ -25,3 +25,4 @@ All notable changes to this package will be documented in this file.
 - Project-wide rule enable and disable states with enabled-by-default behavior.
 - Central rule-state enforcement and isolated configuration-stage execution errors in `RuleRunner`.
 - Optional project-wide severity overrides applied centrally while preserving original issues when configuration is invalid.
+- Global asset and folder exclusions with normalized, segment-aware matching applied by `AssetScanner`.

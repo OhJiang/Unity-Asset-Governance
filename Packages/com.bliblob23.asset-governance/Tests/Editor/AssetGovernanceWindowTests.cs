@@ -108,6 +108,31 @@ namespace UnityAssetGovernance.Tests
         }
 
         [Test]
+        public void ScanSelection_SkipsAssetExcludedByDefaultProfile()
+        {
+            var profile = ScriptableObject.CreateInstance<GovernanceProfile>();
+            GovernanceProfileTests.SetExcludedPaths(profile, FirstAssetPath);
+            AssetDatabase.CreateAsset(profile, ProfilePath);
+            AssetDatabase.SaveAssets();
+            Selection.activeObject = AssetDatabase.LoadMainAssetAtPath(FirstAssetPath);
+            var window = ScriptableObject.CreateInstance<AssetGovernanceWindow>();
+
+            try
+            {
+                var succeeded = window.ScanSelection();
+
+                Assert.That(succeeded, Is.True);
+                Assert.That(window.LastResult.Issues, Is.Empty);
+                Assert.That(window.LastResult.ExecutionErrors, Is.Empty);
+                Assert.That(window.StatusMessage, Is.EqualTo("Scanned 0 asset(s)."));
+            }
+            finally
+            {
+                Object.DestroyImmediate(window);
+            }
+        }
+
+        [Test]
         public void ScanSelection_DisplaysProfileSeverityOverride()
         {
             var profile = ScriptableObject.CreateInstance<GovernanceProfile>();

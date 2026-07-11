@@ -50,6 +50,14 @@ Rule-specific settings derive from `AssetRuleSettings` and declare their stable 
 profile stores references to the abstract base type, so a third-party rule can add a new strongly
 typed settings class without editing `GovernanceProfile` or a central settings registry.
 
+The profile's **Excluded Paths** list skips assets globally before rule execution. Each entry may
+identify one asset or a folder; a folder entry matches its descendants using a path-segment boundary,
+so `Assets/UI` does not accidentally match `Assets/UIImage`. Separators and trailing slashes are
+normalized, paths must start with `Assets` or `Packages`, and entries do not need to exist when the
+profile is authored. `AssetScanner` applies exclusions while creating contexts, so built-in and
+third-party rules do not need their own exclusion checks. Invalid entries fail the scan with an
+explicit configuration message instead of being silently ignored.
+
 The profile also contains generic **Rule States** entries. Each entry pairs a stable rule ID with an
 enabled flag and an optional severity override. Rules without an entry are enabled by default and
 keep the severity produced by the rule, so newly installed third-party rules do not require
@@ -74,8 +82,9 @@ public sealed class MyRuleSettings : AssetRuleSettings
 }
 ```
 
-Create the default profile from **Assets > Create > Asset Governance > Governance Profile**. Add a
-rule ID to Rule States only when its enabled state or severity needs an explicit project override. Create
+Create the default profile from **Assets > Create > Asset Governance > Governance Profile**. Add
+project-relative asset or folder paths to Excluded Paths when all rules should skip them. Add a rule
+ID to Rule States only when its enabled state or severity needs an explicit project override. Create
 `UAG-TEX-001` settings from **Assets > Create > Asset Governance > Rule Settings > UI Texture
 Mipmap Rule**, add that asset to the profile's Rule Settings list, then configure whether Sprite
 textures and/or project path prefixes identify UI textures.

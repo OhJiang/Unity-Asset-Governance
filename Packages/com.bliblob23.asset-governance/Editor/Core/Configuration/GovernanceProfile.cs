@@ -14,10 +14,19 @@ namespace UnityAssetGovernance
     public sealed class GovernanceProfile : ScriptableObject
     {
         [SerializeField]
+        private List<string> excludedPaths = new List<string>();
+
+        [SerializeField]
         private List<RuleState> ruleStates = new List<RuleState>();
 
         [SerializeField]
         private List<AssetRuleSettings> ruleSettings = new List<AssetRuleSettings>();
+
+        /// <summary>
+        /// 获取当前 Profile 中的全局排除路径只读视图。
+        /// </summary>
+        public IReadOnlyList<string> ExcludedPaths =>
+            new ReadOnlyCollection<string>(excludedPaths);
 
         /// <summary>
         /// 获取当前 Profile 中的规则启用状态只读视图。
@@ -30,6 +39,77 @@ namespace UnityAssetGovernance
         /// </summary>
         public IReadOnlyList<AssetRuleSettings> RuleSettings =>
             new ReadOnlyCollection<AssetRuleSettings>(ruleSettings);
+
+        /// <summary>
+        /// 获取指定资源是否被项目级路径配置排除。
+        /// 排除项同时匹配自身和其下级资源，但不会匹配名称相似的相邻路径。
+        /// </summary>
+        public bool IsAssetPathExcluded(string assetPath)
+        {
+            var normalizedAssetPath = NormalizeAssetPath(assetPath, nameof(assetPath));
+            var isExcluded = false;
+
+            foreach (var excludedPath in excludedPaths)
+            {
+                if (string.IsNullOrWhiteSpace(excludedPath))
+                {
+                    throw new InvalidOperationException(
+                        $"Governance profile '{name}' contains an empty excluded path.");
+                }
+
+                var normalizedExcludedPath = NormalizeAssetPath(excludedPath, null);
+                if (!IsProjectAssetPath(normalizedExcludedPath))
+                {
+                    throw new InvalidOperationException(
+                        $"Governance profile '{name}' contains an invalid excluded path " +
+                        $"'{excludedPath}'. Paths must start with 'Assets' or 'Packages'.");
+                }
+
+                if (string.Equals(
+                        normalizedAssetPath,
+                        normalizedExcludedPath,
+                        StringComparison.Ordinal) ||
+                    normalizedAssetPath.StartsWith(
+                        normalizedExcludedPath + "/",
+                        StringComparison.Ordinal))
+                {
+                    isExcluded = true;
+                }
+            }
+
+            return isExcluded;
+        }
+
+        private static string NormalizeAssetPath(string path, string parameterName)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                if (parameterName != null)
+                {
+                    throw new ArgumentException("An asset path is required.", parameterName);
+                }
+
+                return string.Empty;
+            }
+
+            var normalizedPath = path.Trim().Replace('\\', '/').TrimEnd('/');
+            if (!IsProjectAssetPath(normalizedPath) && parameterName != null)
+            {
+                throw new ArgumentException(
+                    "Asset paths must start with 'Assets' or 'Packages'.",
+                    parameterName);
+            }
+
+            return normalizedPath;
+        }
+
+        private static bool IsProjectAssetPath(string path)
+        {
+            return string.Equals(path, "Assets", StringComparison.Ordinal) ||
+                   path.StartsWith("Assets/", StringComparison.Ordinal) ||
+                   string.Equals(path, "Packages", StringComparison.Ordinal) ||
+                   path.StartsWith("Packages/", StringComparison.Ordinal);
+        }
 
         /// <summary>
         /// 获取指定规则是否启用。未配置的规则默认启用。

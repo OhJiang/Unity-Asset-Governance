@@ -66,6 +66,12 @@ namespace UnityAssetGovernance
 
             foreach (var assetPath in sortedAssetPaths)
             {
+                if (governanceProfile != null &&
+                    governanceProfile.IsAssetPathExcluded(assetPath))
+                {
+                    continue;
+                }
+
                 var assetType = AssetDatabase.GetMainAssetTypeAtPath(assetPath);
                 if (assetType == null)
                 {
