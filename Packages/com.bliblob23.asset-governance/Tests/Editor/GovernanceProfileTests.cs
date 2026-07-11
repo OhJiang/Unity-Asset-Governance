@@ -101,6 +101,96 @@ namespace UnityAssetGovernance.Tests
         }
 
         [Test]
+        public void IsRuleWhitelisted_ReturnsFalseWhenNoEntryIsConfigured()
+        {
+            Assert.That(
+                profile.IsRuleWhitelisted("UAG-NAME-001", "Assets/Legacy/Icon.png"),
+                Is.False);
+        }
+
+        [Test]
+        public void IsRuleWhitelisted_MatchesConfiguredRuleAndAsset()
+        {
+            SetWhitelistEntries(
+                profile,
+                ("Assets/Legacy/Icon.png", new[] { "UAG-NAME-001" }));
+
+            Assert.That(
+                profile.IsRuleWhitelisted("UAG-NAME-001", "Assets/Legacy/Icon.png"),
+                Is.True);
+        }
+
+        [Test]
+        public void IsRuleWhitelisted_MatchesFolderDescendantsOnlyForConfiguredRule()
+        {
+            SetWhitelistEntries(
+                profile,
+                ("Assets/Legacy", new[] { "UAG-NAME-001" }));
+
+            Assert.That(
+                profile.IsRuleWhitelisted("UAG-NAME-001", "Assets/Legacy/Nested/Icon.png"),
+                Is.True);
+            Assert.That(
+                profile.IsRuleWhitelisted("UAG-TEX-001", "Assets/Legacy/Nested/Icon.png"),
+                Is.False);
+            Assert.That(
+                profile.IsRuleWhitelisted("UAG-NAME-001", "Assets/LegacyIcons/Icon.png"),
+                Is.False);
+        }
+
+        [Test]
+        public void IsRuleWhitelisted_RejectsEntryWithoutRuleIds()
+        {
+            SetWhitelistEntries(
+                profile,
+                ("Assets/Legacy", Array.Empty<string>()));
+
+            var exception = Assert.Throws<InvalidOperationException>(() =>
+                profile.IsRuleWhitelisted("UAG-NAME-001", "Assets/Legacy/Icon.png"));
+
+            Assert.That(exception.Message, Does.Contain("without rule IDs"));
+        }
+
+        [Test]
+        public void IsRuleWhitelisted_RejectsEmptyRuleId()
+        {
+            SetWhitelistEntries(
+                profile,
+                ("Assets/Legacy", new[] { " " }));
+
+            var exception = Assert.Throws<InvalidOperationException>(() =>
+                profile.IsRuleWhitelisted("UAG-NAME-001", "Assets/Legacy/Icon.png"));
+
+            Assert.That(exception.Message, Does.Contain("empty rule ID"));
+        }
+
+        [Test]
+        public void IsRuleWhitelisted_RejectsDuplicateRuleIds()
+        {
+            SetWhitelistEntries(
+                profile,
+                ("Assets/Legacy", new[] { "UAG-NAME-001", "UAG-NAME-001" }));
+
+            var exception = Assert.Throws<InvalidOperationException>(() =>
+                profile.IsRuleWhitelisted("UAG-NAME-001", "Assets/Legacy/Icon.png"));
+
+            Assert.That(exception.Message, Does.Contain("duplicate whitelist rule ID"));
+        }
+
+        [Test]
+        public void IsRuleWhitelisted_RejectsInvalidAssetPath()
+        {
+            SetWhitelistEntries(
+                profile,
+                ("Library/Legacy", new[] { "UAG-NAME-001" }));
+
+            var exception = Assert.Throws<InvalidOperationException>(() =>
+                profile.IsRuleWhitelisted("UAG-NAME-001", "Assets/Legacy/Icon.png"));
+
+            Assert.That(exception.Message, Does.Contain("invalid whitelist path"));
+        }
+
+        [Test]
         public void IsRuleEnabled_ReturnsTrueWhenRuleHasNoState()
         {
             Assert.That(profile.IsRuleEnabled("UAG-NAME-001"), Is.True);
@@ -282,6 +372,31 @@ namespace UnityAssetGovernance.Tests
             for (var index = 0; index < paths.Length; index++)
             {
                 property.GetArrayElementAtIndex(index).stringValue = paths[index];
+            }
+
+            serializedProfile.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        internal static void SetWhitelistEntries(
+            GovernanceProfile targetProfile,
+            params (string AssetPath, string[] RuleIds)[] entries)
+        {
+            var serializedProfile = new SerializedObject(targetProfile);
+            var property = serializedProfile.FindProperty("whitelistEntries");
+            property.arraySize = entries.Length;
+
+            for (var index = 0; index < entries.Length; index++)
+            {
+                var element = property.GetArrayElementAtIndex(index);
+                element.FindPropertyRelative("assetPath").stringValue = entries[index].AssetPath;
+
+                var ruleIds = element.FindPropertyRelative("ruleIds");
+                ruleIds.arraySize = entries[index].RuleIds.Length;
+                for (var ruleIndex = 0; ruleIndex < entries[index].RuleIds.Length; ruleIndex++)
+                {
+                    ruleIds.GetArrayElementAtIndex(ruleIndex).stringValue =
+                        entries[index].RuleIds[ruleIndex];
+                }
             }
 
             serializedProfile.ApplyModifiedPropertiesWithoutUndo();

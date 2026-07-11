@@ -70,6 +70,127 @@ namespace UnityAssetGovernance.Tests
         }
 
         [Test]
+        public void Run_SkipsWhitelistedRuleBeforeCanEvaluate()
+        {
+            var profile = ScriptableObject.CreateInstance<GovernanceProfile>();
+            GovernanceProfileTests.SetWhitelistEntries(
+                profile,
+                ("Assets/Legacy", new[] { "test.whitelisted" }));
+            var canEvaluateCalled = false;
+            var rule = CreateRule<WhitelistedRuleMarker>(
+                "test.whitelisted",
+                _ =>
+                {
+                    canEvaluateCalled = true;
+                    return true;
+                },
+                _ => throw new InvalidOperationException("Whitelisted rules must not be evaluated."));
+
+            try
+            {
+                var result = RuleRunner.Run(
+                    new[] { CreateContext("Assets/Legacy/Icon.png", profile) },
+                    new IAssetRule[] { rule });
+
+                Assert.That(canEvaluateCalled, Is.False);
+                Assert.That(result.Issues, Is.Empty);
+                Assert.That(result.ExecutionErrors, Is.Empty);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(profile);
+            }
+        }
+
+        [Test]
+        public void Run_WhitelistOnlySkipsConfiguredRuleForSameAsset()
+        {
+            var profile = ScriptableObject.CreateInstance<GovernanceProfile>();
+            GovernanceProfileTests.SetWhitelistEntries(
+                profile,
+                ("Assets/Legacy/Icon.png", new[] { "test.whitelisted-only" }));
+            var whitelistedRule = CreateRule<WhitelistedOnlyRuleMarker>(
+                "test.whitelisted-only",
+                _ => true,
+                asset => new[] { CreateIssue("test.whitelisted-only", asset.AssetPath) });
+            var healthyRule = CreateRule<WhitelistHealthyRuleMarker>(
+                "test.whitelist-healthy",
+                _ => true,
+                asset => new[] { CreateIssue("test.whitelist-healthy", asset.AssetPath) });
+
+            try
+            {
+                var result = RuleRunner.Run(
+                    new[] { CreateContext("Assets/Legacy/Icon.png", profile) },
+                    new IAssetRule[] { whitelistedRule, healthyRule });
+
+                Assert.That(result.Issues.Single().RuleId, Is.EqualTo("test.whitelist-healthy"));
+                Assert.That(result.ExecutionErrors, Is.Empty);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(profile);
+            }
+        }
+
+        [Test]
+        public void Run_PreservesIssueAndReportsInvalidWhitelistConfiguration()
+        {
+            var profile = ScriptableObject.CreateInstance<GovernanceProfile>();
+            GovernanceProfileTests.SetWhitelistEntries(
+                profile,
+                ("Library/Legacy", new[] { "test.invalid-whitelist" }));
+            var rule = CreateRule<InvalidWhitelistRuleMarker>(
+                "test.invalid-whitelist",
+                _ => true,
+                asset => new[] { CreateIssue("test.invalid-whitelist", asset.AssetPath) });
+
+            try
+            {
+                var result = RuleRunner.Run(
+                    new[] { CreateContext("Assets/Legacy/Icon.png", profile) },
+                    new IAssetRule[] { rule });
+
+                Assert.That(result.Issues.Single().RuleId, Is.EqualTo("test.invalid-whitelist"));
+                Assert.That(result.ExecutionErrors, Has.Count.EqualTo(1));
+                Assert.That(result.ExecutionErrors[0].Stage, Is.EqualTo(RuleExecutionStage.Configuration));
+                Assert.That(result.ExecutionErrors[0].Exception.Message, Does.Contain("invalid whitelist path"));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(profile);
+            }
+        }
+
+        [Test]
+        public void Run_DoesNotReadWhitelistForDisabledRule()
+        {
+            var profile = ScriptableObject.CreateInstance<GovernanceProfile>();
+            GovernanceProfileTests.SetRuleStates(profile, ("test.disabled-whitelist", false));
+            GovernanceProfileTests.SetWhitelistEntries(
+                profile,
+                ("Library/Legacy", new[] { "test.disabled-whitelist" }));
+            var rule = CreateRule<DisabledWhitelistRuleMarker>(
+                "test.disabled-whitelist",
+                _ => throw new InvalidOperationException("Disabled rules must stop before whitelist lookup."),
+                _ => Array.Empty<ValidationIssue>());
+
+            try
+            {
+                var result = RuleRunner.Run(
+                    new[] { CreateContext("Assets/Legacy/Icon.png", profile) },
+                    new IAssetRule[] { rule });
+
+                Assert.That(result.Issues, Is.Empty);
+                Assert.That(result.ExecutionErrors, Is.Empty);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(profile);
+            }
+        }
+
+        [Test]
         public void Run_ExecutesExplicitlyEnabledRule()
         {
             var profile = ScriptableObject.CreateInstance<GovernanceProfile>();
@@ -470,6 +591,26 @@ namespace UnityAssetGovernance.Tests
         }
 
         private sealed class DisabledRuleMarker
+        {
+        }
+
+        private sealed class WhitelistedRuleMarker
+        {
+        }
+
+        private sealed class WhitelistedOnlyRuleMarker
+        {
+        }
+
+        private sealed class WhitelistHealthyRuleMarker
+        {
+        }
+
+        private sealed class InvalidWhitelistRuleMarker
+        {
+        }
+
+        private sealed class DisabledWhitelistRuleMarker
         {
         }
 

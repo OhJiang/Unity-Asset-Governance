@@ -28,6 +28,7 @@ Early development. Public APIs are not stable.
 - Strongly typed `ScriptableObject` rule settings through `GovernanceProfile`
 - Project-wide rule enable/disable states and optional severity overrides enforced centrally by `RuleRunner`
 - Global asset and folder exclusions applied centrally by `AssetScanner` before rules execute
+- Rule-specific asset and folder whitelist entries enforced centrally by `RuleRunner`
 - Automatic discovery of the single project default profile, with explicit duplicate-profile errors
 - Configurable UI texture classification by importer type and project path prefixes
 
@@ -35,16 +36,17 @@ Early development. Public APIs are not stable.
 
 1. Create **Assets > Create > Asset Governance > Governance Profile**. The MVP supports one profile per project.
 2. Add asset or folder paths to **Excluded Paths** when they must be skipped globally. Paths must start with `Assets` or `Packages`; folders exclude all descendants.
-3. Add a rule ID to **Rule States** when a rule must be explicitly enabled, disabled, or assigned a project-specific severity. Rules without a state entry remain enabled and keep their original severity by default.
-4. Create **Assets > Create > Asset Governance > Rule Settings > UI Texture Mipmap Rule** and add it to **Rule Settings**.
-5. Keep Sprite classification enabled, add project-specific UI path prefixes, or combine both.
+3. Add a path and one or more stable rule IDs to **Whitelist Entries** when only those rules should skip that asset or folder.
+4. Add a rule ID to **Rule States** when a rule must be explicitly enabled, disabled, or assigned a project-specific severity. Rules without a state entry remain enabled and keep their original severity by default.
+5. Create **Assets > Create > Asset Governance > Rule Settings > UI Texture Mipmap Rule** and add it to **Rule Settings**.
+6. Keep Sprite classification enabled, add project-specific UI path prefixes, or combine both.
 
 When no profile or no `UAG-TEX-001` settings exist, the built-in rule keeps its safe default of treating Sprite textures as UI textures. Custom rules can derive their own settings from `AssetRuleSettings`; the core profile does not need to know concrete third-party settings types.
 
 ## Roadmap
 
-1. Common profile options: whitelist
-2. Automatic fixes
+1. Automatic fixes
+2. Additional built-in rules
 3. CI integration
 
 ## License

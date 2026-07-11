@@ -114,6 +114,11 @@ namespace UnityAssetGovernance
                 return;
             }
 
+            if (IsRuleWhitelisted(preparedRule, context, executionErrors))
+            {
+                return;
+            }
+
             bool canEvaluate;
             try
             {
@@ -207,6 +212,33 @@ namespace UnityAssetGovernance
             try
             {
                 return context.GovernanceProfile.IsRuleEnabled(preparedRule.Descriptor.Id);
+            }
+            catch (Exception exception)
+            {
+                executionErrors.Add(new RuleExecutionError(
+                    preparedRule.Descriptor.Id,
+                    context.AssetPath,
+                    RuleExecutionStage.Configuration,
+                    exception));
+                return false;
+            }
+        }
+
+        private static bool IsRuleWhitelisted(
+            PreparedRule preparedRule,
+            AssetContext context,
+            ICollection<RuleExecutionError> executionErrors)
+        {
+            if (context.GovernanceProfile == null)
+            {
+                return false;
+            }
+
+            try
+            {
+                return context.GovernanceProfile.IsRuleWhitelisted(
+                    preparedRule.Descriptor.Id,
+                    context.AssetPath);
             }
             catch (Exception exception)
             {

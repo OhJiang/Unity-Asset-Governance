@@ -133,6 +133,33 @@ namespace UnityAssetGovernance.Tests
         }
 
         [Test]
+        public void ScanSelection_SkipsOnlyWhitelistedRuleFromDefaultProfile()
+        {
+            var profile = ScriptableObject.CreateInstance<GovernanceProfile>();
+            GovernanceProfileTests.SetWhitelistEntries(
+                profile,
+                (FirstAssetPath, new[] { "UAG-NAME-001" }));
+            AssetDatabase.CreateAsset(profile, ProfilePath);
+            AssetDatabase.SaveAssets();
+            Selection.activeObject = AssetDatabase.LoadMainAssetAtPath(FirstAssetPath);
+            var window = ScriptableObject.CreateInstance<AssetGovernanceWindow>();
+
+            try
+            {
+                var succeeded = window.ScanSelection();
+
+                Assert.That(succeeded, Is.True);
+                Assert.That(window.LastResult.Issues, Is.Empty);
+                Assert.That(window.LastResult.ExecutionErrors, Is.Empty);
+                Assert.That(window.StatusMessage, Is.EqualTo("Scanned 1 asset(s)."));
+            }
+            finally
+            {
+                Object.DestroyImmediate(window);
+            }
+        }
+
+        [Test]
         public void ScanSelection_DisplaysProfileSeverityOverride()
         {
             var profile = ScriptableObject.CreateInstance<GovernanceProfile>();

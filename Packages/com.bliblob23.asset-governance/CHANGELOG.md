@@ -26,3 +26,4 @@ All notable changes to this package will be documented in this file.
 - Central rule-state enforcement and isolated configuration-stage execution errors in `RuleRunner`.
 - Optional project-wide severity overrides applied centrally while preserving original issues when configuration is invalid.
 - Global asset and folder exclusions with normalized, segment-aware matching applied by `AssetScanner`.
+- Rule-specific asset and folder whitelist entries applied before `CanEvaluate()` without hiding violations when configuration is invalid.

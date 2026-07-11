@@ -58,6 +58,14 @@ profile is authored. `AssetScanner` applies exclusions while creating contexts, 
 third-party rules do not need their own exclusion checks. Invalid entries fail the scan with an
 explicit configuration message instead of being silently ignored.
 
+The **Whitelist Entries** list provides narrower exceptions. Each entry combines one asset or folder
+path with one or more stable rule IDs. Only matching rules are skipped; other rules still inspect the
+same resource. Folder matching uses the same normalized path-segment behavior as Excluded Paths.
+`RuleRunner` checks the whitelist after rule enablement and before `CanEvaluate()`, so custom rules
+receive the behavior without additional code. Invalid whitelist configuration is reported as a
+`RuleExecutionStage.Configuration` error, but the rule still executes so malformed exceptions cannot
+silently hide real asset violations.
+
 The profile also contains generic **Rule States** entries. Each entry pairs a stable rule ID with an
 enabled flag and an optional severity override. Rules without an entry are enabled by default and
 keep the severity produced by the rule, so newly installed third-party rules do not require
@@ -83,8 +91,9 @@ public sealed class MyRuleSettings : AssetRuleSettings
 ```
 
 Create the default profile from **Assets > Create > Asset Governance > Governance Profile**. Add
-project-relative asset or folder paths to Excluded Paths when all rules should skip them. Add a rule
-ID to Rule States only when its enabled state or severity needs an explicit project override. Create
+project-relative asset or folder paths to Excluded Paths when all rules should skip them. Use
+Whitelist Entries when only named rules should skip a path. Add a rule ID to Rule States only when
+its enabled state or severity needs an explicit project override. Create
 `UAG-TEX-001` settings from **Assets > Create > Asset Governance > Rule Settings > UI Texture
 Mipmap Rule**, add that asset to the profile's Rule Settings list, then configure whether Sprite
 textures and/or project path prefixes identify UI textures.

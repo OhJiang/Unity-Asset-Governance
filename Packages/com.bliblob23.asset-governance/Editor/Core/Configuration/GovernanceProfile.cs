@@ -17,6 +17,9 @@ namespace UnityAssetGovernance
         private List<string> excludedPaths = new List<string>();
 
         [SerializeField]
+        private List<RuleWhitelistEntry> whitelistEntries = new List<RuleWhitelistEntry>();
+
+        [SerializeField]
         private List<RuleState> ruleStates = new List<RuleState>();
 
         [SerializeField]
@@ -27,6 +30,12 @@ namespace UnityAssetGovernance
         /// </summary>
         public IReadOnlyList<string> ExcludedPaths =>
             new ReadOnlyCollection<string>(excludedPaths);
+
+        /// <summary>
+        /// 获取当前 Profile 中的规则白名单只读视图。
+        /// </summary>
+        public IReadOnlyList<RuleWhitelistEntry> WhitelistEntries =>
+            new ReadOnlyCollection<RuleWhitelistEntry>(whitelistEntries);
 
         /// <summary>
         /// 获取当前 Profile 中的规则启用状态只读视图。
@@ -65,19 +74,88 @@ namespace UnityAssetGovernance
                         $"'{excludedPath}'. Paths must start with 'Assets' or 'Packages'.");
                 }
 
-                if (string.Equals(
-                        normalizedAssetPath,
-                        normalizedExcludedPath,
-                        StringComparison.Ordinal) ||
-                    normalizedAssetPath.StartsWith(
-                        normalizedExcludedPath + "/",
-                        StringComparison.Ordinal))
+                if (PathMatches(normalizedAssetPath, normalizedExcludedPath))
                 {
                     isExcluded = true;
                 }
             }
 
             return isExcluded;
+        }
+
+        /// <summary>
+        /// 获取指定资源是否针对指定规则加入白名单。
+        /// 路径可以指向单个资源或文件夹，规则 ID 使用精确匹配。
+        /// </summary>
+        public bool IsRuleWhitelisted(string ruleId, string assetPath)
+        {
+            if (string.IsNullOrWhiteSpace(ruleId))
+            {
+                throw new ArgumentException("A rule ID is required.", nameof(ruleId));
+            }
+
+            var normalizedAssetPath = NormalizeAssetPath(assetPath, nameof(assetPath));
+            var isWhitelisted = false;
+
+            foreach (var entry in whitelistEntries)
+            {
+                if (entry == null)
+                {
+                    throw new InvalidOperationException(
+                        $"Governance profile '{name}' contains a missing whitelist entry.");
+                }
+
+                if (string.IsNullOrWhiteSpace(entry.AssetPath))
+                {
+                    throw new InvalidOperationException(
+                        $"Governance profile '{name}' contains a whitelist entry with an empty asset path.");
+                }
+
+                var normalizedEntryPath = NormalizeAssetPath(entry.AssetPath, null);
+                if (!IsProjectAssetPath(normalizedEntryPath))
+                {
+                    throw new InvalidOperationException(
+                        $"Governance profile '{name}' contains an invalid whitelist path " +
+                        $"'{entry.AssetPath}'. Paths must start with 'Assets' or 'Packages'.");
+                }
+
+                if (entry.RuleIds.Count == 0)
+                {
+                    throw new InvalidOperationException(
+                        $"Governance profile '{name}' contains a whitelist entry without rule IDs.");
+                }
+
+                var uniqueRuleIds = new HashSet<string>(StringComparer.Ordinal);
+                foreach (var candidateRuleId in entry.RuleIds)
+                {
+                    if (string.IsNullOrWhiteSpace(candidateRuleId))
+                    {
+                        throw new InvalidOperationException(
+                            $"Governance profile '{name}' contains a whitelist entry with an empty rule ID.");
+                    }
+
+                    if (!uniqueRuleIds.Add(candidateRuleId))
+                    {
+                        throw new InvalidOperationException(
+                            $"Governance profile '{name}' contains duplicate whitelist rule ID " +
+                            $"'{candidateRuleId}' for path '{entry.AssetPath}'.");
+                    }
+
+                    if (PathMatches(normalizedAssetPath, normalizedEntryPath) &&
+                        string.Equals(candidateRuleId, ruleId, StringComparison.Ordinal))
+                    {
+                        isWhitelisted = true;
+                    }
+                }
+            }
+
+            return isWhitelisted;
+        }
+
+        private static bool PathMatches(string assetPath, string configuredPath)
+        {
+            return string.Equals(assetPath, configuredPath, StringComparison.Ordinal) ||
+                   assetPath.StartsWith(configuredPath + "/", StringComparison.Ordinal);
         }
 
         private static string NormalizeAssetPath(string path, string parameterName)
