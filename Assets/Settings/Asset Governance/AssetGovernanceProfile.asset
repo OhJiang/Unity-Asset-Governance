@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 49b7e582fb394bf4849be2d780dba337, type: 3}
+  m_Name: AssetGovernanceProfile
+  m_EditorClassIdentifier: UnityAssetGovernance.Editor::UnityAssetGovernance.GovernanceProfile
+  excludedPaths: []
+  whitelistEntries: []
+  ruleStates: []
+  ruleSettings:
+  - {fileID: 11400000, guid: 5ee1fdc052aa04e1c839d2a4395e4ae9, type: 2}
+  - {fileID: 11400000, guid: f7b2455d0d6334318933ba376a7ef826, type: 2}
+  - {fileID: 11400000, guid: 06a2ac558368c43acb4923d6e8bf1ede, type: 2}
+  - {fileID: 11400000, guid: 8bb6a0cd71fcf4cb59dff6fab2b4b398, type: 2}
+  - {fileID: 11400000, guid: f077187eaf3624e25ade358dea506bc2, type: 2}
+  - {fileID: 11400000, guid: c7d538cfeb3ce4caa878aad508acbc68, type: 2}
