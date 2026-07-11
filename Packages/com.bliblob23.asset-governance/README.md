@@ -39,6 +39,7 @@ Early development. Public APIs are not stable.
 - Rule-specific asset and folder whitelist entries enforced centrally by `RuleRunner`
 - Extensible `IFixableAssetRule` contract and exception-isolated `FixRunner` for explicit safe fixes
 - Single-issue fix buttons with automatic rescan in the Editor window
+- Confirmed selected-issue batch fixes with per-issue context refresh, failure isolation, one final rescan, and result summaries
 - Safe automatic Mipmap disabling for `UAG-TEX-001`
 - Safe automatic Read/Write disabling for `UAG-TEX-002`
 - Explicit Texture Max Size correction for `UAG-TEX-003`
@@ -72,9 +73,11 @@ When no profile or no `UAG-TEX-001` settings exist, the built-in rule keeps its 
 
 ## Roadmap
 
-1. Selected-issue batch fixes with confirmation
-2. CI integration
-3. Additional built-in rules based on project feedback
+1. Result filtering in the manual validation window
+2. Explicit whole-project scanning
+3. Third-party rule and strongly typed settings sample
+4. CI integration
+5. Additional built-in rules based on project feedback
 
 ## License
 

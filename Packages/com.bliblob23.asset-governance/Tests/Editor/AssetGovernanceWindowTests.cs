@@ -225,6 +225,82 @@ namespace UnityAssetGovernance.Tests
         }
 
         [Test]
+        public void FixSelectedIssues_OnlyRepairsSelectedProblems()
+        {
+            WritePngAsset(FixableTexturePath);
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            ConfigureTexture(FixableTexturePath, true, true);
+            Selection.activeObject = AssetDatabase.LoadMainAssetAtPath(FixableTexturePath);
+            var window = ScriptableObject.CreateInstance<AssetGovernanceWindow>();
+
+            try
+            {
+                Assert.That(window.ScanSelection(), Is.True);
+                var mipmapIssue = window.LastResult.Issues
+                    .Single(candidate => candidate.RuleId == "UAG-TEX-001");
+                window.SetIssueSelected(mipmapIssue, true);
+
+                var succeeded = window.FixSelectedIssues();
+                var importer = (TextureImporter)AssetImporter.GetAtPath(FixableTexturePath);
+
+                Assert.That(succeeded, Is.True);
+                Assert.That(importer.mipmapEnabled, Is.False);
+                Assert.That(importer.isReadable, Is.True);
+                Assert.That(window.LastBatchFixResult.SucceededCount, Is.EqualTo(1));
+                Assert.That(window.LastBatchFixResult.FailedCount, Is.Zero);
+                Assert.That(window.LastBatchFixResult.SkippedCount, Is.Zero);
+                Assert.That(window.SelectedFixableIssueCount, Is.Zero);
+                Assert.That(
+                    window.LastResult.Issues.Any(candidate => candidate.RuleId == "UAG-TEX-002"),
+                    Is.True);
+                Assert.That(
+                    window.StatusMessage,
+                    Is.EqualTo("Batch fix completed: 1 succeeded, 0 failed, 0 skipped."));
+            }
+            finally
+            {
+                Object.DestroyImmediate(window);
+            }
+        }
+
+        [Test]
+        public void FixSelectedIssues_RefreshesSameAssetBetweenMultipleFixes()
+        {
+            WritePngAsset(FixableTexturePath);
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            ConfigureTexture(FixableTexturePath, true, true);
+            Selection.activeObject = AssetDatabase.LoadMainAssetAtPath(FixableTexturePath);
+            var window = ScriptableObject.CreateInstance<AssetGovernanceWindow>();
+
+            try
+            {
+                Assert.That(window.ScanSelection(), Is.True);
+                window.SelectAllFixableIssues();
+                Assert.That(window.SelectedFixableIssueCount, Is.EqualTo(2));
+
+                var succeeded = window.FixSelectedIssues();
+                var importer = (TextureImporter)AssetImporter.GetAtPath(FixableTexturePath);
+
+                Assert.That(succeeded, Is.True);
+                Assert.That(importer.mipmapEnabled, Is.False);
+                Assert.That(importer.isReadable, Is.False);
+                Assert.That(window.LastBatchFixResult.SucceededCount, Is.EqualTo(2));
+                Assert.That(window.LastBatchFixResult.FailedCount, Is.Zero);
+                Assert.That(window.LastBatchFixResult.SkippedCount, Is.Zero);
+                Assert.That(
+                    window.LastResult.Issues.Any(candidate => candidate.CanFix),
+                    Is.False);
+                Assert.That(
+                    window.StatusMessage,
+                    Is.EqualTo("Batch fix completed: 2 succeeded, 0 failed, 0 skipped."));
+            }
+            finally
+            {
+                Object.DestroyImmediate(window);
+            }
+        }
+
+        [Test]
         public void LocateAsset_SelectsTheIssueAsset()
         {
             var expectedAsset = AssetDatabase.LoadMainAssetAtPath(SecondAssetPath);
@@ -268,11 +344,15 @@ namespace UnityAssetGovernance.Tests
                 Convert.FromBase64String(TestPngBase64));
         }
 
-        private static void ConfigureTexture(string assetPath, bool mipmapEnabled)
+        private static void ConfigureTexture(
+            string assetPath,
+            bool mipmapEnabled,
+            bool isReadable = false)
         {
             var importer = (TextureImporter)AssetImporter.GetAtPath(assetPath);
             importer.textureType = TextureImporterType.Sprite;
             importer.mipmapEnabled = mipmapEnabled;
+            importer.isReadable = isReadable;
             importer.SaveAndReimport();
         }
 

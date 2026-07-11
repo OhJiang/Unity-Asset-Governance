@@ -64,6 +64,12 @@ var fixResult = FixRunner.Fix(currentContext, issue);
 After a successful fix, callers should scan and run validation again. The Editor window performs
 this verification automatically for its single-issue **Fix** action.
 
+`BatchFixRunner.Fix()` processes an explicit issue collection without changing issues that were not
+provided. It scans each issue asset again immediately before fixing, so multiple fixes for the same
+reimported asset do not reuse a stale importer. One failure is captured without stopping later fixes.
+Non-fixable issues and assets excluded after the original scan are reported as skipped through
+`BatchFixResult`. Callers remain responsible for one final rescan after the complete batch.
+
 ## Strongly Typed Configuration
 
 `GovernanceProfile` is the project-level `ScriptableObject` configuration asset. The MVP locates
@@ -252,5 +258,4 @@ and ping the corresponding asset in the Project window. A confirmed fixable issu
 - Installation
 - Configuration
 - Writing custom rules
-- Batch automatic fixes
 - CI integration

@@ -39,4 +39,6 @@ All notable changes to this package will be documented in this file.
 - Built-in `UAG-AUDIO-002` rule with independent strongly typed long-audio path classification and safe Streaming correction.
 - Built-in `UAG-NAME-002` rule with Unicode-aware Chinese detection and strongly typed project-specific forbidden characters.
 - Single-issue Editor window fixes followed by automatic selection rescanning.
+- Selected-issue batch fixes with an explicit confirmation dialog and affected asset count.
+- Per-issue asset context refresh, failure isolation, skipped issue tracking, one final rescan, and batch result summaries.
 - Public rule type filtering so non-public test and implementation helpers are ignored during `TypeCache` discovery.
