@@ -110,7 +110,7 @@ namespace UnityAssetGovernance
             EditorGUIUtility.PingObject(asset);
         }
 
-        private static void DrawIssues(IReadOnlyList<ValidationIssue> issues)
+        private void DrawIssues(IReadOnlyList<ValidationIssue> issues)
         {
             if (issues.Count == 0)
             {
@@ -121,12 +121,65 @@ namespace UnityAssetGovernance
             EditorGUILayout.LabelField("Asset Issues", EditorStyles.boldLabel);
             foreach (var issue in issues)
             {
+                EditorGUILayout.BeginHorizontal();
                 if (GUILayout.Button(
                     $"[{issue.Severity}] {issue.RuleId} | {issue.AssetPath}\n{issue.Message}",
                     EditorStyles.helpBox))
                 {
                     LocateAsset(issue.AssetPath);
                 }
+
+                if (issue.CanFix && GUILayout.Button("Fix", GUILayout.Width(56f)))
+                {
+                    FixIssue(issue);
+                    EditorGUILayout.EndHorizontal();
+                    break;
+                }
+
+                EditorGUILayout.EndHorizontal();
+            }
+        }
+
+        internal bool FixIssue(ValidationIssue issue)
+        {
+            if (issue == null)
+            {
+                throw new ArgumentNullException(nameof(issue));
+            }
+
+            try
+            {
+                var contexts = AssetScanner.Scan(new[] { issue.AssetPath });
+                if (contexts.Count == 0)
+                {
+                    _statusMessage =
+                        $"Fix failed: Asset '{issue.AssetPath}' is unavailable for validation.";
+                    Repaint();
+                    return false;
+                }
+
+                var fixResult = FixRunner.Fix(contexts[0], issue);
+                if (!fixResult.Succeeded)
+                {
+                    _statusMessage = $"Fix failed: {fixResult.ExecutionError.Exception.Message}";
+                    Repaint();
+                    return false;
+                }
+
+                if (!ScanSelection())
+                {
+                    return false;
+                }
+
+                _statusMessage = $"Fixed {issue.RuleId} and rescanned selection.";
+                Repaint();
+                return true;
+            }
+            catch (Exception exception)
+            {
+                _statusMessage = $"Fix failed: {exception.Message}";
+                Repaint();
+                return false;
             }
         }
 

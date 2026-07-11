@@ -27,3 +27,8 @@ All notable changes to this package will be documented in this file.
 - Optional project-wide severity overrides applied centrally while preserving original issues when configuration is invalid.
 - Global asset and folder exclusions with normalized, segment-aware matching applied by `AssetScanner`.
 - Rule-specific asset and folder whitelist entries applied before `CanEvaluate()` without hiding violations when configuration is invalid.
+- Extensible `IFixableAssetRule` contract with framework-confirmed `ValidationIssue.CanFix` state.
+- Exception-isolated `FixRunner` with stale-issue capability checks and structured fix results.
+- Safe automatic Mipmap disabling for the built-in `UAG-TEX-001` rule.
+- Single-issue Editor window fixes followed by automatic selection rescanning.
+- Public rule type filtering so non-public test and implementation helpers are ignored during `TypeCache` discovery.

@@ -40,6 +40,17 @@ namespace UnityAssetGovernance.Tests
         }
 
         [Test]
+        public void DiscoverRules_IgnoresNonPublicRuleTypes()
+        {
+            var rules = RuleRegistry.DiscoverRules(new[]
+            {
+                typeof(PrivateRule)
+            });
+
+            Assert.That(rules, Is.Empty);
+        }
+
+        [Test]
         public void DiscoverRules_RejectsRuleWithoutPublicParameterlessConstructor()
         {
             Assert.That(
@@ -102,6 +113,21 @@ namespace UnityAssetGovernance.Tests
             Assert.That(
                 rules.Select(rule => rule.Descriptor.Id),
                 Is.EqualTo(new[] { "test.AlphaRuleMarker", "test.ZuluRuleMarker" }));
+        }
+
+        private sealed class PrivateRule : IAssetRule
+        {
+            public RuleDescriptor Descriptor => null;
+
+            public bool CanEvaluate(AssetContext context)
+            {
+                return false;
+            }
+
+            public IEnumerable<ValidationIssue> Evaluate(AssetContext context)
+            {
+                return Array.Empty<ValidationIssue>();
+            }
         }
 
         public sealed class AlphaRuleMarker

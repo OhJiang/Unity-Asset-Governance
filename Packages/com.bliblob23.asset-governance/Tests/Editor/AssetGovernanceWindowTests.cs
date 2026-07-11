@@ -14,6 +14,9 @@ namespace UnityAssetGovernance.Tests
         private const string FirstAssetPath = TestFolder + "/A.txt";
         private const string SecondAssetPath = TestFolder + "/B.txt";
         private const string ProfilePath = TestFolder + "/GovernanceProfile.asset";
+        private const string FixableTexturePath = TestFolder + "/FixableTexture.png";
+        private const string TestPngBase64 =
+            "iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAD0lEQVR4nGP4jwYYSBcAAHg8P8FY7imoAAAAAElFTkSuQmCC";
 
         private Object[] _previousSelection;
 
@@ -188,6 +191,40 @@ namespace UnityAssetGovernance.Tests
         }
 
         [Test]
+        public void FixIssue_RepairsTextureAndRescansSelection()
+        {
+            WritePngAsset(FixableTexturePath);
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            ConfigureTexture(FixableTexturePath, true);
+            Selection.activeObject = AssetDatabase.LoadMainAssetAtPath(FixableTexturePath);
+            var window = ScriptableObject.CreateInstance<AssetGovernanceWindow>();
+
+            try
+            {
+                Assert.That(window.ScanSelection(), Is.True);
+                var issue = window.LastResult.Issues
+                    .Single(candidate => candidate.RuleId == "UAG-TEX-001");
+
+                var succeeded = window.FixIssue(issue);
+                var importer = (TextureImporter)AssetImporter.GetAtPath(FixableTexturePath);
+
+                Assert.That(succeeded, Is.True);
+                Assert.That(importer.mipmapEnabled, Is.False);
+                Assert.That(
+                    window.LastResult.Issues.Any(candidate => candidate.RuleId == "UAG-TEX-001"),
+                    Is.False);
+                Assert.That(window.LastResult.ExecutionErrors, Is.Empty);
+                Assert.That(
+                    window.StatusMessage,
+                    Is.EqualTo("Fixed UAG-TEX-001 and rescanned selection."));
+            }
+            finally
+            {
+                Object.DestroyImmediate(window);
+            }
+        }
+
+        [Test]
         public void LocateAsset_SelectsTheIssueAsset()
         {
             var expectedAsset = AssetDatabase.LoadMainAssetAtPath(SecondAssetPath);
@@ -216,6 +253,27 @@ namespace UnityAssetGovernance.Tests
             {
                 Object.DestroyImmediate(window);
             }
+        }
+
+        private static void WritePngAsset(string assetPath)
+        {
+            var projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
+            if (projectRoot == null)
+            {
+                throw new InvalidOperationException("Unable to determine the Unity project root.");
+            }
+
+            File.WriteAllBytes(
+                Path.Combine(projectRoot, assetPath),
+                Convert.FromBase64String(TestPngBase64));
+        }
+
+        private static void ConfigureTexture(string assetPath, bool mipmapEnabled)
+        {
+            var importer = (TextureImporter)AssetImporter.GetAtPath(assetPath);
+            importer.textureType = TextureImporterType.Sprite;
+            importer.mipmapEnabled = mipmapEnabled;
+            importer.SaveAndReimport();
         }
 
         private static void WriteTextAsset(string assetPath, string contents)

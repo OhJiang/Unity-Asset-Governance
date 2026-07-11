@@ -29,6 +29,9 @@ Early development. Public APIs are not stable.
 - Project-wide rule enable/disable states and optional severity overrides enforced centrally by `RuleRunner`
 - Global asset and folder exclusions applied centrally by `AssetScanner` before rules execute
 - Rule-specific asset and folder whitelist entries enforced centrally by `RuleRunner`
+- Extensible `IFixableAssetRule` contract and exception-isolated `FixRunner` for explicit safe fixes
+- Single-issue fix buttons with automatic rescan in the Editor window
+- Safe automatic Mipmap disabling for `UAG-TEX-001`
 - Automatic discovery of the single project default profile, with explicit duplicate-profile errors
 - Configurable UI texture classification by importer type and project path prefixes
 
@@ -45,8 +48,8 @@ When no profile or no `UAG-TEX-001` settings exist, the built-in rule keeps its 
 
 ## Roadmap
 
-1. Automatic fixes
-2. Additional built-in rules
+1. Additional built-in rules
+2. Selected-issue batch fixes with confirmation
 3. CI integration
 
 ## License

@@ -11,8 +11,9 @@ Custom validation rules implement `IAssetRule`. Rules expose immutable metadata 
 ## Rule Discovery
 
 `RuleRegistry.DiscoverRules()` uses Unity `TypeCache` to find concrete `IAssetRule`
-implementations automatically. Rules must provide a public parameterless constructor and a
-non-null descriptor with a unique ID. Discovery results are sorted by rule ID so execution is
+implementations automatically. Rule classes must be public and provide a public parameterless
+constructor plus a non-null descriptor with a unique ID. Non-public helper types are ignored.
+Discovery results are sorted by rule ID so execution is
 deterministic across the Editor and BatchMode. Custom rules do not require registration in a
 central hard-coded list.
 
@@ -38,6 +39,30 @@ var result = RuleRunner.Run(contexts);
 
 Resource violations are available through `result.Issues`; framework execution failures are kept
 separately in `result.ExecutionErrors`.
+
+## Automatic Fix Extension Contract
+
+A rule that can safely repair one of its own issues implements `IFixableAssetRule` in addition to
+`IAssetRule`. `Evaluate()` must remain read-only. `CanFix()` checks the current asset state, while
+`Fix()` is the only rule method allowed to modify an importer or asset and must persist the change.
+
+`RuleRunner` calls `CanFix()` when collecting an issue and exposes the confirmed result through
+`ValidationIssue.CanFix`. Rules cannot mark their own issues as fixable through the public issue
+constructor. If `CanFix()` throws, the issue is preserved as read-only and the exception becomes a
+`RuleExecutionStage.CanFix` execution error.
+
+`FixRunner.Fix()` locates the matching rule by stable ID, checks `CanFix()` again to reject stale
+issues, and captures both capability-check and repair exceptions as a `FixResult`. Fixes are always
+explicit; validation never modifies assets implicitly.
+
+```csharp
+var issue = result.Issues.First(candidate => candidate.CanFix);
+var currentContext = AssetScanner.Scan(new[] { issue.AssetPath }).Single();
+var fixResult = FixRunner.Fix(currentContext, issue);
+```
+
+After a successful fix, callers should scan and run validation again. The Editor window performs
+this verification automatically for its single-issue **Fix** action.
 
 ## Strongly Typed Configuration
 
@@ -111,20 +136,22 @@ because automatically renaming assets can affect external tools and workflows.
 This error reports an issue when a UI texture importer has mipmaps enabled. Without project
 settings, `TextureImporterType.Sprite` remains the built-in classification. A strongly typed
 `UiTextureMipmapsDisabledRuleSettings` asset can keep or disable Sprite classification and add
-project-specific UI path prefixes without hard-coding business directories in the rule. The rule
-remains read-only until the shared automatic-fix pipeline is implemented.
+project-specific UI path prefixes without hard-coding business directories in the rule. This is the
+first safely fixable built-in rule: its explicit fix disables `TextureImporter.mipmapEnabled`, saves
+and reimports the texture, and is followed by validation again in the Editor window.
 
 ## Manual Validation Window
 
 Open `Tools > Asset Governance`, select one or more assets or folders in the Project window, and
 click **Scan Selection**. Selected folders are expanded recursively through `AssetScanner`. The
 window displays asset issues separately from rule execution errors. Click an asset issue to select
-and ping the corresponding asset in the Project window.
+and ping the corresponding asset in the Project window. A confirmed fixable issue also displays a
+**Fix** button; successful fixes are followed by a rescan of the current selection.
 
 ## Planned Documentation
 
 - Installation
 - Configuration
 - Writing custom rules
-- Automatic fixes
+- Batch automatic fixes
 - CI integration

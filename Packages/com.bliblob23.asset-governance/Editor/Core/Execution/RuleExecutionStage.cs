@@ -7,6 +7,8 @@ namespace UnityAssetGovernance
     {
         CanEvaluate = 0,
         Evaluate = 1,
-        Configuration = 2
+        Configuration = 2,
+        CanFix = 3,
+        Fix = 4
     }
 }

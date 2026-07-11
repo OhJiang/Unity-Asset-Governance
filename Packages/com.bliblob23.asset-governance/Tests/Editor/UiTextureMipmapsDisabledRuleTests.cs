@@ -163,6 +163,39 @@ namespace UnityAssetGovernance.Tests
         }
 
         [Test]
+        public void ScannerAndRunner_MarkMipmapIssueAsFixable()
+        {
+            var contexts = AssetScanner.Scan(new[] { MipmapsEnabledPath });
+
+            var result = RuleRunner.Run(contexts);
+
+            Assert.That(result.ExecutionErrors, Is.Empty);
+            Assert.That(
+                result.Issues.Single(issue => issue.RuleId == "UAG-TEX-001").CanFix,
+                Is.True);
+        }
+
+        [Test]
+        public void FixRunner_DisablesMipmapsAndIssueDisappearsAfterRescan()
+        {
+            var context = ScanSingle(MipmapsEnabledPath);
+            var issue = RuleRunner.Run(new[] { context }).Issues
+                .Single(candidate => candidate.RuleId == "UAG-TEX-001");
+
+            var fixResult = FixRunner.Fix(context, issue);
+            var importer = (TextureImporter)AssetImporter.GetAtPath(MipmapsEnabledPath);
+            var verificationResult = RuleRunner.Run(
+                AssetScanner.Scan(new[] { MipmapsEnabledPath }));
+
+            Assert.That(fixResult.Succeeded, Is.True);
+            Assert.That(importer.mipmapEnabled, Is.False);
+            Assert.That(
+                verificationResult.Issues.Any(candidate => candidate.RuleId == "UAG-TEX-001"),
+                Is.False);
+            Assert.That(verificationResult.ExecutionErrors, Is.Empty);
+        }
+
+        [Test]
         public void DiscoverRules_FindsTextureRuleWithoutCentralRegistration()
         {
             var rules = RuleRegistry.DiscoverRules();

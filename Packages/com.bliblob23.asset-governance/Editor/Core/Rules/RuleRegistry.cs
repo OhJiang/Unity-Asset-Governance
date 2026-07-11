@@ -43,6 +43,13 @@ namespace UnityAssetGovernance
                     continue;
                 }
 
+                // 规则是面向第三方程序集的公开扩展点。忽略非公开辅助类型，
+                // 避免测试夹具或程序集内部实现被 Unity TypeCache 当成可注册规则。
+                if (!ruleType.IsPublic && !ruleType.IsNestedPublic)
+                {
+                    continue;
+                }
+
                 if (!typeof(IAssetRule).IsAssignableFrom(ruleType))
                 {
                     throw new InvalidOperationException(

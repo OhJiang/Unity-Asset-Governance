@@ -188,9 +188,19 @@ namespace UnityAssetGovernance
                         severityResolved = true;
                     }
 
-                    issues.Add(hasSeverityOverride
-                        ? CopyIssueWithSeverity(issue, severityOverride)
-                        : issue);
+                    var finalIssue = hasSeverityOverride
+                        ? CopyIssue(issue, severityOverride, issue.CanFix)
+                        : issue;
+                    var canFix = CanFixIssue(
+                        preparedRule,
+                        context,
+                        finalIssue,
+                        executionErrors);
+
+                    issues.Add(CopyIssue(
+                        finalIssue,
+                        finalIssue.Severity,
+                        canFix));
                 }
             }
             catch (Exception exception)
@@ -281,11 +291,38 @@ namespace UnityAssetGovernance
             }
         }
 
-        private static ValidationIssue CopyIssueWithSeverity(
+        private static bool CanFixIssue(
+            PreparedRule preparedRule,
+            AssetContext context,
             ValidationIssue issue,
-            RuleSeverity severity)
+            ICollection<RuleExecutionError> executionErrors)
         {
-            if (issue.Severity == severity)
+            if (!(preparedRule.Rule is IFixableAssetRule fixableRule))
+            {
+                return false;
+            }
+
+            try
+            {
+                return fixableRule.CanFix(context, issue);
+            }
+            catch (Exception exception)
+            {
+                executionErrors.Add(new RuleExecutionError(
+                    preparedRule.Descriptor.Id,
+                    context.AssetPath,
+                    RuleExecutionStage.CanFix,
+                    exception));
+                return false;
+            }
+        }
+
+        private static ValidationIssue CopyIssue(
+            ValidationIssue issue,
+            RuleSeverity severity,
+            bool canFix)
+        {
+            if (issue.Severity == severity && issue.CanFix == canFix)
             {
                 return issue;
             }
@@ -294,7 +331,8 @@ namespace UnityAssetGovernance
                 issue.RuleId,
                 severity,
                 issue.AssetPath,
-                issue.Message);
+                issue.Message,
+                canFix);
         }
 
         private static void AddEvaluationError(

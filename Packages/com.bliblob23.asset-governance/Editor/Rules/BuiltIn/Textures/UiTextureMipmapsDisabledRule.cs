@@ -8,7 +8,7 @@ namespace UnityAssetGovernance
     /// <summary>
     /// 检查项目配置所识别的 UI 纹理是否关闭了 Mipmap。
     /// </summary>
-    public sealed class UiTextureMipmapsDisabledRule : IAssetRule
+    public sealed class UiTextureMipmapsDisabledRule : IFixableAssetRule
     {
         private static readonly RuleDescriptor DescriptorValue = new RuleDescriptor(
             "UAG-TEX-001",
@@ -53,6 +53,37 @@ namespace UnityAssetGovernance
                     context.AssetPath,
                     "UI texture mipmaps must be disabled.")
             };
+        }
+
+        public bool CanFix(AssetContext context, ValidationIssue issue)
+        {
+            if (context == null)
+            {
+                throw new ArgumentNullException(nameof(context));
+            }
+
+            if (issue == null)
+            {
+                throw new ArgumentNullException(nameof(issue));
+            }
+
+            return string.Equals(issue.RuleId, DescriptorValue.Id, StringComparison.Ordinal) &&
+                   string.Equals(issue.AssetPath, context.AssetPath, StringComparison.Ordinal) &&
+                   context.Importer is TextureImporter textureImporter &&
+                   textureImporter.mipmapEnabled;
+        }
+
+        public void Fix(AssetContext context, ValidationIssue issue)
+        {
+            if (!CanFix(context, issue))
+            {
+                throw new InvalidOperationException(
+                    "The UI texture mipmap issue cannot be fixed in its current state.");
+            }
+
+            var textureImporter = (TextureImporter)context.Importer;
+            textureImporter.mipmapEnabled = false;
+            textureImporter.SaveAndReimport();
         }
 
         private static UiTextureMipmapsDisabledRuleSettings GetSettings(

@@ -12,6 +12,16 @@ namespace UnityAssetGovernance
             RuleSeverity severity,
             string assetPath,
             string message)
+            : this(ruleId, severity, assetPath, message, false)
+        {
+        }
+
+        internal ValidationIssue(
+            string ruleId,
+            RuleSeverity severity,
+            string assetPath,
+            string message,
+            bool canFix)
         {
             if (string.IsNullOrWhiteSpace(ruleId))
             {
@@ -37,6 +47,7 @@ namespace UnityAssetGovernance
             Severity = severity;
             AssetPath = assetPath;
             Message = message;
+            CanFix = canFix;
         }
 
         public string RuleId { get; }
@@ -46,5 +57,10 @@ namespace UnityAssetGovernance
         public string AssetPath { get; }
 
         public string Message { get; }
+
+        /// <summary>
+        /// 获取框架是否已确认当前问题可以通过对应规则自动修复。
+        /// </summary>
+        public bool CanFix { get; }
     }
 }
