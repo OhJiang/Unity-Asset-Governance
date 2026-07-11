@@ -23,6 +23,7 @@ Early development. Public APIs are not stable.
 - Recursive asset and folder scanning with duplicate removal and deterministic ordering
 - Synchronous rule execution with exception isolation and deterministic results
 - Built-in `UAG-NAME-001` rule for asset paths and file names containing spaces
+- Built-in `UAG-NAME-002` rule for Chinese and project-configured forbidden characters
 - Built-in `UAG-TEX-001` rule requiring configured UI texture mipmaps to be disabled
 - Built-in `UAG-TEX-002` rule requiring texture Read/Write to be disabled unless whitelisted
 - Built-in `UAG-TEX-003` rule enforcing configurable Texture Max Size limits
@@ -64,14 +65,16 @@ Early development. Public APIs are not stable.
 12. Add project-specific short-audio path prefixes and choose the non-Streaming Load Type used by explicit fixes. No short-audio business path is built into the package.
 13. Create **Assets > Create > Asset Governance > Rule Settings > Long Audio Streaming Rule** and add it to **Rule Settings**.
 14. Add project-specific BGM or long-audio path prefixes. Explicit fixes change matching clips to Streaming; avoid overlapping these paths with short-audio paths.
+15. Create **Assets > Create > Asset Governance > Rule Settings > Asset Path Forbidden Characters Rule** and add it to **Rule Settings** when the project bans additional characters.
+16. Enter project-specific forbidden characters as one string. Chinese ideographs are detected without settings; path separators and the file-extension separator cannot be configured as forbidden.
 
-When no profile or no `UAG-TEX-001` settings exist, the built-in rule keeps its safe default of treating Sprite textures as UI textures. `UAG-TEX-002` applies to every `TextureImporter`; add an asset or folder path with rule ID `UAG-TEX-002` to Whitelist Entries only when runtime CPU texture access is intentional. `UAG-TEX-003` applies a default Max Size limit of 2048 unless strongly typed settings provide a different default or path-specific override. `UAG-TEX-004` applies only to textures explicitly imported as Normal Maps; intentional exceptions can reuse the shared rule whitelist. `UAG-MODEL-001` expects Model Scale Factor 1 by default and supports strongly typed default and path-specific values. `UAG-MODEL-002` applies to every `ModelImporter`; whitelist only models that intentionally require runtime CPU mesh access. `UAG-AUDIO-001` runs only when strongly typed settings classify a clip by project path, and fixes Streaming clips to the configured non-Streaming Load Type. `UAG-AUDIO-002` independently classifies BGM or long audio by project path and fixes matching clips to Streaming. Custom rules can derive their own settings from `AssetRuleSettings`; the core profile does not need to know concrete third-party settings types.
+When no profile or no `UAG-TEX-001` settings exist, the built-in rule keeps its safe default of treating Sprite textures as UI textures. `UAG-TEX-002` applies to every `TextureImporter`; add an asset or folder path with rule ID `UAG-TEX-002` to Whitelist Entries only when runtime CPU texture access is intentional. `UAG-TEX-003` applies a default Max Size limit of 2048 unless strongly typed settings provide a different default or path-specific override. `UAG-TEX-004` applies only to textures explicitly imported as Normal Maps; intentional exceptions can reuse the shared rule whitelist. `UAG-MODEL-001` expects Model Scale Factor 1 by default and supports strongly typed default and path-specific values. `UAG-MODEL-002` applies to every `ModelImporter`; whitelist only models that intentionally require runtime CPU mesh access. `UAG-AUDIO-001` runs only when strongly typed settings classify a clip by project path, and fixes Streaming clips to the configured non-Streaming Load Type. `UAG-AUDIO-002` independently classifies BGM or long audio by project path and fixes matching clips to Streaming. `UAG-NAME-002` always detects Chinese ideographs and optionally adds project-specific forbidden characters through strongly typed settings. Custom rules can derive their own settings from `AssetRuleSettings`; the core profile does not need to know concrete third-party settings types.
 
 ## Roadmap
 
-1. Additional built-in rules
-2. Selected-issue batch fixes with confirmation
-3. CI integration
+1. Selected-issue batch fixes with confirmation
+2. CI integration
+3. Additional built-in rules based on project feedback
 
 ## License
 

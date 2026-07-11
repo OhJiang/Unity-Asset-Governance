@@ -135,6 +135,9 @@ business paths belong in project configuration.
 Create `UAG-AUDIO-002` settings from **Assets > Create > Asset Governance > Rule Settings > Long
 Audio Streaming Rule** and add project-specific BGM or long-audio path prefixes. Keep short-audio
 and long-audio classifications from overlapping because their Load Type requirements are opposite.
+Create `UAG-NAME-002` settings from **Assets > Create > Asset Governance > Rule Settings > Asset
+Path Forbidden Characters Rule** when the project needs restrictions beyond built-in Chinese
+ideograph detection. Enter additional forbidden characters as a single string.
 
 ## Built-in Rules
 
@@ -143,6 +146,17 @@ and long-audio classifications from overlapping because their Load Type requirem
 This warning applies to every asset type. It reports an issue when any part of the asset path,
 including parent folders or the file name, contains a normal space character. The rule is read-only
 because automatically renaming assets can affect external tools and workflows.
+
+### UAG-NAME-002: Asset Paths Must Not Contain Chinese Or Forbidden Characters
+
+This warning applies to every asset type and detects Chinese ideographs across the common BMP,
+compatibility, and supplementary CJK Unicode ranges. `AssetPathForbiddenCharactersRuleSettings`
+can add project-specific forbidden Unicode characters without changing the rule implementation.
+Duplicate configured characters and structural path characters (`/`, `\`, and the extension `.`)
+become explicit execution errors. The rule reports each distinct offending character in first-seen
+order and intentionally offers no automatic rename because path changes can affect external tools,
+version control, string-based loading, and other references. Intentional exceptions can reuse the
+shared whitelist for rule ID `UAG-NAME-002`.
 
 ### UAG-TEX-001: UI Texture Mipmaps Must Be Disabled
 
