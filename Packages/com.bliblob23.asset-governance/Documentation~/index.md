@@ -186,6 +186,15 @@ The rule intentionally does not offer automatic correction because changing a mo
 can alter its effective size in existing scenes and prefabs. Intentional exceptions can reuse a
 `GovernanceProfile` Whitelist Entry for rule ID `UAG-MODEL-001`.
 
+### UAG-MODEL-002: Model Read/Write Must Be Disabled
+
+This warning applies to every asset imported through `ModelImporter`. It reports an issue when
+`ModelImporter.isReadable` is enabled because retaining CPU-readable mesh data should be an explicit
+project decision. Models that intentionally require runtime mesh access can reuse a
+`GovernanceProfile` Whitelist Entry for rule ID `UAG-MODEL-002`; the rule does not introduce a
+separate exception list. Its explicit safe fix disables Read/Write, saves and reimports the model,
+and the Editor window then validates the current selection again.
+
 ## Manual Validation Window
 
 Open `Tools > Asset Governance`, select one or more assets or folders in the Project window, and

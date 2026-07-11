@@ -34,5 +34,6 @@ All notable changes to this package will be documented in this file.
 - Built-in `UAG-TEX-003` rule with strongly typed default and longest-path Texture Max Size limits plus explicit correction.
 - Built-in `UAG-TEX-004` rule with Normal Map sRGB validation, shared whitelist support, and safe automatic correction.
 - Built-in `UAG-MODEL-001` rule with strongly typed default and longest-path Model Scale Factor expectations.
+- Built-in `UAG-MODEL-002` rule with shared whitelist support and safe automatic Model Read/Write disabling.
 - Single-issue Editor window fixes followed by automatic selection rescanning.
 - Public rule type filtering so non-public test and implementation helpers are ignored during `TypeCache` discovery.
