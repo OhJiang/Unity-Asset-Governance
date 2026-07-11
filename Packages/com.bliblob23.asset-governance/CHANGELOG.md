@@ -19,3 +19,6 @@ All notable changes to this package will be documented in this file.
 - Built-in `UAG-NAME-001` rule for detecting spaces in asset paths and file names.
 - Built-in `UAG-TEX-001` rule requiring Sprite texture mipmaps to be disabled.
 - Minimal Editor window for scanning selected assets and folders, displaying results, and locating assets.
+- Strongly typed `AssetRuleSettings` extension point and project-level `GovernanceProfile`.
+- Automatic unique default profile lookup plus explicit profile injection through `AssetScanner`.
+- Configurable Sprite and path-prefix classification for the built-in `UAG-TEX-001` rule.

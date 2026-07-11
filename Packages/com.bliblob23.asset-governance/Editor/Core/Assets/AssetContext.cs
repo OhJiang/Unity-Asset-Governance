@@ -15,6 +15,25 @@ namespace UnityAssetGovernance
             UnityEngine.Object asset,
             AssetImporter importer,
             BuildTarget buildTarget)
+            : this(
+                assetGuid,
+                assetPath,
+                assetType,
+                asset,
+                importer,
+                buildTarget,
+                null)
+        {
+        }
+
+        public AssetContext(
+            string assetGuid,
+            string assetPath,
+            Type assetType,
+            UnityEngine.Object asset,
+            AssetImporter importer,
+            BuildTarget buildTarget,
+            GovernanceProfile governanceProfile)
         {
             if (string.IsNullOrWhiteSpace(assetPath))
             {
@@ -27,6 +46,7 @@ namespace UnityAssetGovernance
             Asset = asset;
             Importer = importer;
             BuildTarget = buildTarget;
+            GovernanceProfile = governanceProfile;
         }
 
         public string AssetGuid { get; }
@@ -46,5 +66,10 @@ namespace UnityAssetGovernance
         public AssetImporter Importer { get; }
 
         public BuildTarget BuildTarget { get; }
+
+        /// <summary>
+        /// 获取本次扫描使用的项目治理配置；项目未创建配置时为空引用。
+        /// </summary>
+        public GovernanceProfile GovernanceProfile { get; }
     }
 }

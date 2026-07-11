@@ -21,6 +21,21 @@ namespace UnityAssetGovernance
                 throw new ArgumentNullException(nameof(assetPaths));
             }
 
+            return Scan(assetPaths, GovernanceProfileLocator.LoadDefault());
+        }
+
+        /// <summary>
+        /// 使用显式指定的 Profile 扫描资源，便于工具入口、CI 和测试控制配置来源。
+        /// </summary>
+        public static IReadOnlyList<AssetContext> Scan(
+            IEnumerable<string> assetPaths,
+            GovernanceProfile governanceProfile)
+        {
+            if (assetPaths == null)
+            {
+                throw new ArgumentNullException(nameof(assetPaths));
+            }
+
             var uniqueAssetPaths = new HashSet<string>(StringComparer.Ordinal);
 
             foreach (var assetPath in assetPaths)
@@ -64,7 +79,8 @@ namespace UnityAssetGovernance
                     assetType,
                     null,
                     AssetImporter.GetAtPath(assetPath),
-                    buildTarget));
+                    buildTarget,
+                    governanceProfile));
             }
 
             return new ReadOnlyCollection<AssetContext>(contexts);

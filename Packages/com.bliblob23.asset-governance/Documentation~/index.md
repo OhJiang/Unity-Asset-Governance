@@ -39,6 +39,34 @@ var result = RuleRunner.Run(contexts);
 Resource violations are available through `result.Issues`; framework execution failures are kept
 separately in `result.ExecutionErrors`.
 
+## Strongly Typed Configuration
+
+`GovernanceProfile` is the project-level `ScriptableObject` configuration asset. The MVP locates
+it automatically and permits zero or one profile: no profile means built-in defaults are used,
+while multiple profiles stop the scan with an explicit configuration error. Callers such as future
+CI integrations can bypass automatic lookup with `AssetScanner.Scan(paths, profile)`.
+
+Rule-specific settings derive from `AssetRuleSettings` and declare their stable `RuleId`. The
+profile stores references to the abstract base type, so a third-party rule can add a new strongly
+typed settings class without editing `GovernanceProfile` or a central settings registry.
+
+```csharp
+public sealed class MyRuleSettings : AssetRuleSettings
+{
+    public override string RuleId => "MY-RULE-001";
+
+    [SerializeField]
+    private int maximumValue = 10;
+
+    public int MaximumValue => maximumValue;
+}
+```
+
+Create the default profile from **Assets > Create > Asset Governance > Governance Profile**. Create
+`UAG-TEX-001` settings from **Assets > Create > Asset Governance > Rule Settings > UI Texture
+Mipmap Rule**, add that asset to the profile's Rule Settings list, then configure whether Sprite
+textures and/or project path prefixes identify UI textures.
+
 ## Built-in Rules
 
 ### UAG-NAME-001: Asset Paths Must Not Contain Spaces
@@ -49,11 +77,11 @@ because automatically renaming assets can affect external tools and workflows.
 
 ### UAG-TEX-001: UI Texture Mipmaps Must Be Disabled
 
-This error currently treats textures imported with `TextureImporterType.Sprite` as UI textures. It
-reports an issue when the texture importer has mipmaps enabled. This initial importer-based
-classification keeps the probe rule free of hard-coded project paths. A forthcoming strongly typed
-ScriptableObject configuration will allow projects to define UI path categories explicitly. The
-rule remains read-only until the shared automatic-fix pipeline is implemented.
+This error reports an issue when a UI texture importer has mipmaps enabled. Without project
+settings, `TextureImporterType.Sprite` remains the built-in classification. A strongly typed
+`UiTextureMipmapsDisabledRuleSettings` asset can keep or disable Sprite classification and add
+project-specific UI path prefixes without hard-coding business directories in the rule. The rule
+remains read-only until the shared automatic-fix pipeline is implemented.
 
 ## Manual Validation Window
 
@@ -67,6 +95,5 @@ and ping the corresponding asset in the Project window.
 - Installation
 - Configuration
 - Writing custom rules
-- Writing custom rule settings
 - Automatic fixes
 - CI integration

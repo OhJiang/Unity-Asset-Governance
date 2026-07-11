@@ -23,12 +23,24 @@ Early development. Public APIs are not stable.
 - Recursive asset and folder scanning with duplicate removal and deterministic ordering
 - Synchronous rule execution with exception isolation and deterministic results
 - Built-in `UAG-NAME-001` rule for asset paths and file names containing spaces
-- Built-in `UAG-TEX-001` rule requiring Sprite texture mipmaps to be disabled
+- Built-in `UAG-TEX-001` rule requiring configured UI texture mipmaps to be disabled
 - Minimal Editor window for scanning selected assets or folders and locating reported assets
+- Strongly typed `ScriptableObject` rule settings through `GovernanceProfile`
+- Automatic discovery of the single project default profile, with explicit duplicate-profile errors
+- Configurable UI texture classification by importer type and project path prefixes
+
+## Quick Configuration
+
+1. Create **Assets > Create > Asset Governance > Governance Profile**. The MVP supports one profile per project.
+2. Create **Assets > Create > Asset Governance > Rule Settings > UI Texture Mipmap Rule**.
+3. Add the rule settings asset to the profile's **Rule Settings** list.
+4. Keep Sprite classification enabled, add project-specific UI path prefixes, or combine both.
+
+When no profile or no `UAG-TEX-001` settings exist, the built-in rule keeps its safe default of treating Sprite textures as UI textures. Custom rules can derive their own settings from `AssetRuleSettings`; the core profile does not need to know concrete third-party settings types.
 
 ## Roadmap
 
-1. ScriptableObject configuration and configurable UI path classification
+1. Common profile options: rule enablement, severity overrides, exclusions, and whitelist
 2. Automatic fixes
 3. CI integration
 

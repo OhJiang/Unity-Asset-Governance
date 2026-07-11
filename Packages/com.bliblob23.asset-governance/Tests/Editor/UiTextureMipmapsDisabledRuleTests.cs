@@ -49,6 +49,94 @@ namespace UnityAssetGovernance.Tests
             Assert.That(rule.CanEvaluate(defaultContext), Is.False);
         }
 
+
+        [Test]
+        public void CanEvaluate_AcceptsDefaultTextureInsideConfiguredUiPath()
+        {
+            var rule = new UiTextureMipmapsDisabledRule();
+            var settings = CreateSettings(false, TestFolder);
+            var profile = CreateProfile(settings);
+
+            try
+            {
+                var context = AssetScanner.Scan(new[] { DefaultTexturePath }, profile).Single();
+
+                Assert.That(rule.CanEvaluate(context), Is.True);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(profile);
+                UnityEngine.Object.DestroyImmediate(settings);
+            }
+        }
+
+        [Test]
+        public void CanEvaluate_CanDisableSpriteClassificationThroughSettings()
+        {
+            var rule = new UiTextureMipmapsDisabledRule();
+            var settings = CreateSettings(false);
+            var profile = CreateProfile(settings);
+
+            try
+            {
+                var context = AssetScanner.Scan(new[] { MipmapsEnabledPath }, profile).Single();
+
+                Assert.That(rule.CanEvaluate(context), Is.False);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(profile);
+                UnityEngine.Object.DestroyImmediate(settings);
+            }
+        }
+
+        [Test]
+        public void ScannerAndRunner_UseStronglyTypedUiPathSettings()
+        {
+            var settings = CreateSettings(false, TestFolder);
+            var profile = CreateProfile(settings);
+
+            try
+            {
+                var contexts = AssetScanner.Scan(new[] { DefaultTexturePath }, profile);
+                var result = RuleRunner.Run(contexts);
+
+                Assert.That(result.ExecutionErrors, Is.Empty);
+                Assert.That(
+                    result.Issues.Single(issue => issue.RuleId == "UAG-TEX-001").AssetPath,
+                    Is.EqualTo(DefaultTexturePath));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(profile);
+                UnityEngine.Object.DestroyImmediate(settings);
+            }
+        }
+
+        [Test]
+        public void Runner_ReportsInvalidUiPathConfigurationAsExecutionError()
+        {
+            var settings = CreateSettings(false, string.Empty);
+            var profile = CreateProfile(settings);
+
+            try
+            {
+                var contexts = AssetScanner.Scan(new[] { DefaultTexturePath }, profile);
+                var result = RuleRunner.Run(contexts);
+
+                Assert.That(result.Issues, Is.Empty);
+                Assert.That(result.ExecutionErrors, Has.Count.EqualTo(1));
+                Assert.That(result.ExecutionErrors[0].RuleId, Is.EqualTo("UAG-TEX-001"));
+                Assert.That(result.ExecutionErrors[0].Stage, Is.EqualTo(RuleExecutionStage.CanEvaluate));
+                Assert.That(result.ExecutionErrors[0].Exception.Message, Does.Contain("empty UI path prefix"));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(profile);
+                UnityEngine.Object.DestroyImmediate(settings);
+            }
+        }
+
         [Test]
         public void Evaluate_ReturnsNoIssueWhenMipmapsAreDisabled()
         {
@@ -98,6 +186,34 @@ namespace UnityAssetGovernance.Tests
             Assert.That(
                 result.Issues.Single(issue => issue.RuleId == "UAG-TEX-001").AssetPath,
                 Is.EqualTo(MipmapsEnabledPath));
+        }
+
+
+        private static GovernanceProfile CreateProfile(
+            UiTextureMipmapsDisabledRuleSettings settings)
+        {
+            var profile = ScriptableObject.CreateInstance<GovernanceProfile>();
+            GovernanceProfileTests.SetRuleSettings(profile, settings);
+            return profile;
+        }
+
+        private static UiTextureMipmapsDisabledRuleSettings CreateSettings(
+            bool includeSpriteTextures,
+            params string[] uiPathPrefixes)
+        {
+            var settings = ScriptableObject.CreateInstance<UiTextureMipmapsDisabledRuleSettings>();
+            var serializedSettings = new SerializedObject(settings);
+            serializedSettings.FindProperty("includeSpriteTextures").boolValue = includeSpriteTextures;
+
+            var prefixesProperty = serializedSettings.FindProperty("uiPathPrefixes");
+            prefixesProperty.arraySize = uiPathPrefixes.Length;
+            for (var index = 0; index < uiPathPrefixes.Length; index++)
+            {
+                prefixesProperty.GetArrayElementAtIndex(index).stringValue = uiPathPrefixes[index];
+            }
+
+            serializedSettings.ApplyModifiedPropertiesWithoutUndo();
+            return settings;
         }
 
         private static AssetContext ScanSingle(string assetPath)
