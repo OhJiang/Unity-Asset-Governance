@@ -162,6 +162,16 @@ invalid paths, duplicate normalized paths, and invalid limits become explicit ex
 The explicit fix sets the importer Max Size to the currently resolved limit, saves and reimports the
 texture, and is followed by validation again in the Editor window.
 
+### UAG-TEX-004: Normal Map sRGB Must Be Disabled
+
+This error applies only to textures whose importer type is `TextureImporterType.NormalMap`. It
+reports an issue when `TextureImporter.sRGBTexture` remains enabled, because normal vectors must be
+sampled as linear data rather than color data. Unity 6000.5.2f1 allows this invalid combination to
+persist after reimport, so the rule checks the actual serialized importer state instead of assuming
+Unity corrects it automatically. Intentional exceptions can reuse a `GovernanceProfile` Whitelist
+Entry for rule ID `UAG-TEX-004`. The explicit safe fix disables sRGB sampling, preserves the Normal
+Map importer type, saves and reimports the texture, and is followed by validation again.
+
 ## Manual Validation Window
 
 Open `Tools > Asset Governance`, select one or more assets or folders in the Project window, and

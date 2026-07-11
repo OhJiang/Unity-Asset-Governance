@@ -32,5 +32,6 @@ All notable changes to this package will be documented in this file.
 - Safe automatic Mipmap disabling for the built-in `UAG-TEX-001` rule.
 - Built-in `UAG-TEX-002` rule with whitelist support and safe automatic Texture Read/Write disabling.
 - Built-in `UAG-TEX-003` rule with strongly typed default and longest-path Texture Max Size limits plus explicit correction.
+- Built-in `UAG-TEX-004` rule with Normal Map sRGB validation, shared whitelist support, and safe automatic correction.
 - Single-issue Editor window fixes followed by automatic selection rescanning.
 - Public rule type filtering so non-public test and implementation helpers are ignored during `TypeCache` discovery.
