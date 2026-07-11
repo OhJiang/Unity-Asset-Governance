@@ -47,6 +47,14 @@ This warning applies to every asset type. It reports an issue when any part of t
 including parent folders or the file name, contains a normal space character. The rule is read-only
 because automatically renaming assets can affect external tools and workflows.
 
+### UAG-TEX-001: UI Texture Mipmaps Must Be Disabled
+
+This error currently treats textures imported with `TextureImporterType.Sprite` as UI textures. It
+reports an issue when the texture importer has mipmaps enabled. This initial importer-based
+classification keeps the probe rule free of hard-coded project paths. A forthcoming strongly typed
+ScriptableObject configuration will allow projects to define UI path categories explicitly. The
+rule remains read-only until the shared automatic-fix pipeline is implemented.
+
 ## Manual Validation Window
 
 Open `Tools > Asset Governance`, select one or more assets or folders in the Project window, and

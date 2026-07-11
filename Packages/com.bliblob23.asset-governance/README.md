@@ -23,14 +23,14 @@ Early development. Public APIs are not stable.
 - Recursive asset and folder scanning with duplicate removal and deterministic ordering
 - Synchronous rule execution with exception isolation and deterministic results
 - Built-in `UAG-NAME-001` rule for asset paths and file names containing spaces
+- Built-in `UAG-TEX-001` rule requiring Sprite texture mipmaps to be disabled
 - Minimal Editor window for scanning selected assets or folders and locating reported assets
 
 ## Roadmap
 
-1. UI Texture Mipmap probe rule
-2. ScriptableObject configuration
-3. Automatic fixes
-4. CI integration
+1. ScriptableObject configuration and configurable UI path classification
+2. Automatic fixes
+3. CI integration
 
 ## License
 
