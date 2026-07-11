@@ -125,6 +125,9 @@ textures and/or project path prefixes identify UI textures. Create `UAG-TEX-003`
 **Assets > Create > Asset Governance > Rule Settings > Texture Max Size Rule** to replace its
 built-in limit of 2048 or add asset and folder path overrides. The longest matching path takes
 precedence, allowing broad defaults to be refined for specific directories.
+Create `UAG-MODEL-001` settings from **Assets > Create > Asset Governance > Rule Settings > Model
+Scale Factor Rule** to replace its built-in expected value of 1 or add model and folder path
+overrides. Model settings use the same longest matching path behavior.
 
 ## Built-in Rules
 
@@ -171,6 +174,17 @@ persist after reimport, so the rule checks the actual serialized importer state 
 Unity corrects it automatically. Intentional exceptions can reuse a `GovernanceProfile` Whitelist
 Entry for rule ID `UAG-TEX-004`. The explicit safe fix disables sRGB sampling, preserves the Normal
 Map importer type, saves and reimports the texture, and is followed by validation again.
+
+### UAG-MODEL-001: Model Scale Factor Must Match Configuration
+
+This warning applies to assets imported through `ModelImporter`. Without rule settings, every model
+is expected to use `ModelImporter.globalScale` 1. `ModelScaleFactorRuleSettings` provides a
+project-wide expected value and asset or folder path overrides; matching is segment-aware and the
+longest matching path wins. Values must be finite and greater than zero, while missing entries,
+invalid paths, duplicate normalized paths, and invalid values become explicit execution errors.
+The rule intentionally does not offer automatic correction because changing a model's Scale Factor
+can alter its effective size in existing scenes and prefabs. Intentional exceptions can reuse a
+`GovernanceProfile` Whitelist Entry for rule ID `UAG-MODEL-001`.
 
 ## Manual Validation Window
 
