@@ -121,7 +121,10 @@ Whitelist Entries when only named rules should skip a path. Add a rule ID to Rul
 its enabled state or severity needs an explicit project override. Create
 `UAG-TEX-001` settings from **Assets > Create > Asset Governance > Rule Settings > UI Texture
 Mipmap Rule**, add that asset to the profile's Rule Settings list, then configure whether Sprite
-textures and/or project path prefixes identify UI textures.
+textures and/or project path prefixes identify UI textures. Create `UAG-TEX-003` settings from
+**Assets > Create > Asset Governance > Rule Settings > Texture Max Size Rule** to replace its
+built-in limit of 2048 or add asset and folder path overrides. The longest matching path takes
+precedence, allowing broad defaults to be refined for specific directories.
 
 ## Built-in Rules
 
@@ -148,6 +151,16 @@ explicit project decision. Assets that intentionally require runtime pixel acces
 through a `GovernanceProfile` Whitelist Entry for rule ID `UAG-TEX-002`; the rule does not duplicate
 that shared exception mechanism in separate settings. Its explicit safe fix disables Read/Write,
 saves and reimports the texture, and the Editor window then validates the current selection again.
+
+### UAG-TEX-003: Texture Max Size Must Not Exceed Limit
+
+This warning compares `TextureImporter.maxTextureSize` with a configuration-driven limit. Without
+rule settings, every texture uses 2048. `TextureMaxSizeRuleSettings` provides a project default and
+path-specific overrides for assets or folders; path matching is segment-aware and the longest
+matching path wins. Limits must be powers of two from 32 through 16384, while missing entries,
+invalid paths, duplicate normalized paths, and invalid limits become explicit execution errors.
+The explicit fix sets the importer Max Size to the currently resolved limit, saves and reimports the
+texture, and is followed by validation again in the Editor window.
 
 ## Manual Validation Window
 
