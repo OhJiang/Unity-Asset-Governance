@@ -19,10 +19,14 @@ namespace UnityAssetGovernance
         private SerializedProperty _ruleStates;
         private SerializedProperty _ruleSettings;
         private IReadOnlyList<RuleOption> _ruleOptions = Array.Empty<RuleOption>();
+        private IReadOnlyList<RuleSettingsInspectorUtility.RuleSettingsOption> _ruleSettingsOptions =
+            Array.Empty<RuleSettingsInspectorUtility.RuleSettingsOption>();
         private string _ruleDiscoveryError;
+        private string _ruleSettingsDiscoveryError;
         private bool _showExcludedPaths = true;
         private bool _showRuleStates = true;
         private bool _showWhitelistEntries = true;
+        private bool _showRuleSettings = true;
 
         private void OnEnable()
         {
@@ -47,7 +51,7 @@ namespace UnityAssetGovernance
             DrawExcludedPaths();
             DrawRuleStates();
             DrawWhitelistEntries();
-            EditorGUILayout.PropertyField(_ruleSettings, true);
+            DrawRuleSettings();
 
             serializedObject.ApplyModifiedProperties();
         }
@@ -59,6 +63,14 @@ namespace UnityAssetGovernance
                 EditorGUILayout.HelpBox(
                     $"Rule discovery failed. Existing rule IDs are preserved, but rule selection " +
                     $"is unavailable.\n{_ruleDiscoveryError}",
+                    MessageType.Error);
+            }
+
+            if (!string.IsNullOrEmpty(_ruleSettingsDiscoveryError))
+            {
+                EditorGUILayout.HelpBox(
+                    "Rule Settings discovery failed. Existing references are preserved, but " +
+                    $"one-click creation is unavailable.\n{_ruleSettingsDiscoveryError}",
                     MessageType.Error);
             }
 
@@ -284,6 +296,233 @@ namespace UnityAssetGovernance
             }
         }
 
+        private void DrawRuleSettings()
+        {
+            EditorGUILayout.Space();
+            _showRuleSettings = EditorGUILayout.Foldout(
+                _showRuleSettings,
+                $"Rule Settings ({_ruleSettings.arraySize})",
+                true);
+            if (!_showRuleSettings)
+            {
+                return;
+            }
+
+            EditorGUILayout.HelpBox(
+                "Rule Settings provide strongly typed configuration for rules that need project-specific values. " +
+                "Create a supported Settings asset here or add an existing one.",
+                MessageType.None);
+
+            var duplicateRuleIds = FindDuplicateRuleIds(ReadRuleSettingsIds(_ruleSettings));
+            for (var index = 0; index < _ruleSettings.arraySize; index++)
+            {
+                var property = _ruleSettings.GetArrayElementAtIndex(index);
+                var settings = property.objectReferenceValue as AssetRuleSettings;
+
+                EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField(
+                    settings == null ? $"Rule Settings {index + 1}" : settings.name,
+                    EditorStyles.boldLabel);
+                if (GUILayout.Button("Remove", GUILayout.Width(70f)))
+                {
+                    property.objectReferenceValue = null;
+                    _ruleSettings.DeleteArrayElementAtIndex(index);
+                    EditorGUILayout.EndHorizontal();
+                    EditorGUILayout.EndVertical();
+                    break;
+                }
+                EditorGUILayout.EndHorizontal();
+
+                if (settings == null)
+                {
+                    EditorGUILayout.HelpBox(
+                        "This Rule Settings reference is missing.",
+                        MessageType.Error);
+                    EditorGUILayout.EndVertical();
+                    continue;
+                }
+
+                string ruleId;
+                try
+                {
+                    ruleId = settings.RuleId;
+                }
+                catch (Exception exception)
+                {
+                    EditorGUILayout.HelpBox(
+                        $"Could not read Rule ID: {exception.Message}",
+                        MessageType.Error);
+                    EditorGUILayout.EndVertical();
+                    continue;
+                }
+
+                EditorGUILayout.LabelField("Rule", FindRuleLabel(ruleId));
+                EditorGUILayout.LabelField("Settings Type", settings.GetType().Name);
+                EditorGUI.BeginDisabledGroup(true);
+                EditorGUILayout.ObjectField(
+                    "Settings Asset",
+                    settings,
+                    typeof(AssetRuleSettings),
+                    false);
+                EditorGUI.EndDisabledGroup();
+
+                if (GUILayout.Button("Select Settings Asset"))
+                {
+                    Selection.activeObject = settings;
+                    EditorGUIUtility.PingObject(settings);
+                }
+
+                DrawRuleSettingsWarnings(settings, ruleId, duplicateRuleIds);
+                EditorGUILayout.EndVertical();
+            }
+
+            DrawRuleSettingsActions();
+        }
+
+        private void DrawRuleSettingsActions()
+        {
+            EditorGUI.BeginDisabledGroup(!string.IsNullOrEmpty(_ruleSettingsDiscoveryError));
+            if (GUILayout.Button("Create Rule Settings"))
+            {
+                ShowCreateRuleSettingsMenu();
+            }
+            EditorGUI.EndDisabledGroup();
+
+            var existingSettings = EditorGUILayout.ObjectField(
+                "Add Existing Settings",
+                null,
+                typeof(AssetRuleSettings),
+                false) as AssetRuleSettings;
+            if (existingSettings == null)
+            {
+                return;
+            }
+
+            serializedObject.Update();
+            if (!RuleSettingsInspectorUtility.TryAddReference(
+                    _ruleSettings,
+                    existingSettings,
+                    out var error))
+            {
+                EditorUtility.DisplayDialog("Could Not Add Rule Settings", error, "OK");
+                return;
+            }
+
+            serializedObject.ApplyModifiedProperties();
+            EditorUtility.SetDirty(target);
+        }
+
+        private void ShowCreateRuleSettingsMenu()
+        {
+            var menu = new GenericMenu();
+            var configuredRuleIds = new HashSet<string>(
+                ReadRuleSettingsIds(_ruleSettings),
+                StringComparer.Ordinal);
+            var availableOptionCount = 0;
+
+            foreach (var option in _ruleSettingsOptions)
+            {
+                if (configuredRuleIds.Contains(option.RuleId))
+                {
+                    menu.AddDisabledItem(new GUIContent($"{option.Label} (Configured)"));
+                    continue;
+                }
+
+                availableOptionCount++;
+                var selectedOption = option;
+                menu.AddItem(
+                    new GUIContent(option.Label),
+                    false,
+                    () => CreateRuleSettings(selectedOption));
+            }
+
+            if (_ruleSettingsOptions.Count == 0)
+            {
+                menu.AddDisabledItem(new GUIContent("No creatable Rule Settings types discovered"));
+            }
+            else if (availableOptionCount == 0)
+            {
+                menu.AddDisabledItem(new GUIContent("All Rule Settings are configured"));
+            }
+
+            menu.ShowAsContext();
+        }
+
+        private void CreateRuleSettings(
+            RuleSettingsInspectorUtility.RuleSettingsOption option)
+        {
+            try
+            {
+                var settings = RuleSettingsInspectorUtility.CreateAndAttach(
+                    target as GovernanceProfile,
+                    serializedObject,
+                    _ruleSettings,
+                    option);
+                Selection.activeObject = settings;
+                EditorGUIUtility.PingObject(settings);
+                Repaint();
+            }
+            catch (Exception exception)
+            {
+                EditorUtility.DisplayDialog(
+                    "Could Not Create Rule Settings",
+                    exception.Message,
+                    "OK");
+            }
+        }
+
+        private void DrawRuleSettingsWarnings(
+            AssetRuleSettings settings,
+            string ruleId,
+            ISet<string> duplicateRuleIds)
+        {
+            if (string.IsNullOrWhiteSpace(ruleId))
+            {
+                EditorGUILayout.HelpBox(
+                    "This Rule Settings asset has an empty Rule ID.",
+                    MessageType.Error);
+                return;
+            }
+
+            if (duplicateRuleIds.Contains(ruleId))
+            {
+                EditorGUILayout.HelpBox(
+                    $"Rule '{ruleId}' has more than one Rule Settings reference.",
+                    MessageType.Error);
+            }
+
+            if (string.IsNullOrEmpty(_ruleDiscoveryError) &&
+                !ContainsRuleOption(_ruleOptions, ruleId))
+            {
+                EditorGUILayout.HelpBox(
+                    $"Rule '{ruleId}' is not currently discovered. The Settings reference is preserved.",
+                    MessageType.Warning);
+            }
+
+            if (string.IsNullOrWhiteSpace(AssetDatabase.GetAssetPath(settings)))
+            {
+                EditorGUILayout.HelpBox(
+                    "This Rule Settings object is not saved as a project asset.",
+                    MessageType.Error);
+            }
+        }
+
+        private string FindRuleLabel(string ruleId)
+        {
+            foreach (var option in _ruleOptions)
+            {
+                if (string.Equals(option.Id, ruleId, StringComparison.Ordinal))
+                {
+                    return option.Label;
+                }
+            }
+
+            return string.IsNullOrWhiteSpace(ruleId)
+                ? "(empty Rule ID)"
+                : $"Missing: {ruleId}";
+        }
+
         private void DrawRulePopup(string label, SerializedProperty ruleId)
         {
             if (!string.IsNullOrEmpty(_ruleDiscoveryError))
@@ -381,6 +620,18 @@ namespace UnityAssetGovernance
                 _ruleOptions = Array.Empty<RuleOption>();
                 _ruleDiscoveryError = exception.Message;
             }
+
+            try
+            {
+                _ruleSettingsOptions = RuleSettingsInspectorUtility.DiscoverOptions(_ruleOptions);
+                _ruleSettingsDiscoveryError = null;
+            }
+            catch (Exception exception)
+            {
+                _ruleSettingsOptions =
+                    Array.Empty<RuleSettingsInspectorUtility.RuleSettingsOption>();
+                _ruleSettingsDiscoveryError = exception.Message;
+            }
         }
 
         internal static IReadOnlyList<RuleOption> CreateRuleOptions(
@@ -452,6 +703,32 @@ namespace UnityAssetGovernance
                     ruleStates.GetArrayElementAtIndex(index)
                         .FindPropertyRelative("ruleId")
                         .stringValue);
+            }
+
+            return ruleIds;
+        }
+
+        private static IReadOnlyList<string> ReadRuleSettingsIds(
+            SerializedProperty ruleSettings)
+        {
+            var ruleIds = new List<string>(ruleSettings.arraySize);
+            for (var index = 0; index < ruleSettings.arraySize; index++)
+            {
+                var settings = ruleSettings.GetArrayElementAtIndex(index).objectReferenceValue
+                    as AssetRuleSettings;
+                if (settings == null)
+                {
+                    continue;
+                }
+
+                try
+                {
+                    ruleIds.Add(settings.RuleId);
+                }
+                catch
+                {
+                    // 单个损坏的第三方 Settings 不应阻止其余配置继续显示和编辑。
+                }
             }
 
             return ruleIds;

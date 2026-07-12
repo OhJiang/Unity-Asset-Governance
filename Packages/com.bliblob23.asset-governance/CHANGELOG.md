@@ -8,6 +8,7 @@ All notable changes to this package will be documented in this file.
 
 - Rule-aware Governance Profile Inspector with dynamic rule selection for Rule States, multi-select whitelist rules, and inline empty, duplicate, and missing rule ID diagnostics.
 - Drag-and-drop asset path fields for exclusions and whitelist entries, plus a compact searchable popup for selecting whitelist rules.
+- Rule Settings management in the Governance Profile Inspector with dynamic type discovery, one-click asset creation and attachment, existing asset selection, and inline reference diagnostics.
 
 ## [0.1.0] - 2026-07-12
 
