@@ -42,4 +42,5 @@ All notable changes to this package will be documented in this file.
 - Selected-issue batch fixes with an explicit confirmation dialog and affected asset count.
 - Per-issue asset context refresh, failure isolation, skipped issue tracking, one final rescan, and batch result summaries.
 - Editor window issue filtering by severity, fixability, rule ID, asset path, and issue message without rescanning.
+- Explicit project `Assets` scanning with scope-aware rescanning after single-issue and selected-issue batch fixes.
 - Public rule type filtering so non-public test and implementation helpers are ignored during `TypeCache` discovery.

@@ -33,6 +33,8 @@ Early development. Public APIs are not stable.
 - Built-in `UAG-AUDIO-001` rule preventing configured short audio from using Streaming
 - Built-in `UAG-AUDIO-002` rule requiring configured long audio to use Streaming
 - Minimal Editor window for scanning selected assets or folders and locating reported assets
+- Explicit project `Assets` scanning without requiring a Project window selection
+- Scope-aware rescanning after single-issue and selected-issue batch fixes
 - Editor window result filtering by severity, fixability, rule ID, asset path, and message text
 - Strongly typed `ScriptableObject` rule settings through `GovernanceProfile`
 - Project-wide rule enable/disable states and optional severity overrides enforced centrally by `RuleRunner`
@@ -74,10 +76,9 @@ When no profile or no `UAG-TEX-001` settings exist, the built-in rule keeps its 
 
 ## Roadmap
 
-1. Explicit whole-project scanning
-2. Third-party rule and strongly typed settings sample
-3. CI integration
-4. Additional built-in rules based on project feedback
+1. Third-party rule and strongly typed settings sample
+2. CI integration
+3. Additional built-in rules based on project feedback
 
 ## License
 

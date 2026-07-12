@@ -247,18 +247,24 @@ is followed by validation again. Intentional exceptions can reuse the shared whi
 
 ## Manual Validation Window
 
-Open `Tools > Asset Governance`, select one or more assets or folders in the Project window, and
-click **Scan Selection**. Selected folders are expanded recursively through `AssetScanner`. The
-window displays asset issues separately from rule execution errors. Click an asset issue to select
+Open `Tools > Asset Governance`. Use **Scan Selection** to scan one or more assets or folders
+selected in the Project window; selected folders are expanded recursively through `AssetScanner`.
+Use **Scan Project Assets** to scan the complete project `Assets` tree without making a Project window
+selection. Project scanning intentionally excludes `Packages`, so third-party package dependencies are
+not included in the project's governance results.
+
+The window displays asset issues separately from rule execution errors. Click an asset issue to select
 and ping the corresponding asset in the Project window. A confirmed fixable issue also displays a
-**Fix** button; successful fixes are followed by a rescan of the current selection.
+**Fix** button. After a successful fix, the window validates the same scope that produced the issue:
+a selection scan is followed by another selection scan, while a project scan is followed by another
+scan of the complete `Assets` tree.
 
 Fixable issues also have selection toggles. Use **Select All Visible Fixable** or choose individual
 issues, then click **Fix Selected**. The confirmation dialog reports both the selected issue count and
 affected asset count and allows cancellation. Only selected issues are processed. Each issue refreshes
-its asset context before fixing, one failure does not stop later fixes, and the selection is rescanned
-once after the batch. The status message summarizes succeeded, failed, and skipped counts; detailed
-batch failures remain visible below the validation results.
+its asset context before fixing, one failure does not stop later fixes, and the original scan scope is
+rescanned once after the batch. The status message summarizes succeeded, failed, and skipped counts;
+detailed batch failures remain visible below the validation results.
 
 The result controls can independently show or hide `Error`, `Warning`, and `Info` issues, limit the
 list to fixable issues, and search rule IDs, asset paths, or issue messages without case sensitivity.

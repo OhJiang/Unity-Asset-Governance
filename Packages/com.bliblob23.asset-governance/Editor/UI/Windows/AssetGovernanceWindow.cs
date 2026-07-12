@@ -7,8 +7,14 @@ using UnityEngine;
 
 namespace UnityAssetGovernance
 {
+    internal enum AssetGovernanceScanScope
+    {
+        Selection = 0,
+        ProjectAssets = 1
+    }
+
     /// <summary>
-    /// 为当前选择的资源提供最小可用的手动检查入口。
+    /// 为选中资源或项目 Assets 提供最小可用的手动检查入口。
     /// </summary>
     public sealed class AssetGovernanceWindow : EditorWindow
     {
@@ -22,6 +28,7 @@ namespace UnityAssetGovernance
         private bool _showOnlyFixable;
         private ValidationRunResult _lastResult;
         private BatchFixResult _lastBatchFixResult;
+        private AssetGovernanceScanScope? _lastScanScope;
         private string _statusMessage = "Select assets or folders, then run validation.";
 
         internal ValidationRunResult LastResult => _lastResult;
@@ -29,6 +36,8 @@ namespace UnityAssetGovernance
         internal BatchFixResult LastBatchFixResult => _lastBatchFixResult;
 
         internal int SelectedFixableIssueCount => _selectedFixableIssues.Count;
+
+        internal AssetGovernanceScanScope? LastScanScope => _lastScanScope;
 
         internal string StatusMessage => _statusMessage;
 
@@ -43,10 +52,17 @@ namespace UnityAssetGovernance
             EditorGUILayout.LabelField("Unity Asset Governance", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(_statusMessage, MessageType.Info);
 
+            EditorGUILayout.BeginHorizontal();
             if (GUILayout.Button("Scan Selection"))
             {
                 ScanSelection();
             }
+
+            if (GUILayout.Button("Scan Project Assets"))
+            {
+                ScanProjectAssets();
+            }
+            EditorGUILayout.EndHorizontal();
 
             if (_lastResult == null)
             {
@@ -91,27 +107,45 @@ namespace UnityAssetGovernance
 
         internal bool ScanSelection()
         {
-            _selectedFixableIssues.Clear();
-            _lastBatchFixResult = null;
-
             var assetPaths = CollectSelectedAssetPaths();
             if (assetPaths.Count == 0)
             {
-                _lastResult = null;
+                ResetScanState();
                 _statusMessage = "No assets or folders are selected.";
                 Repaint();
                 return false;
             }
 
+            return Scan(
+                assetPaths,
+                AssetGovernanceScanScope.Selection,
+                count => $"Scanned {count} asset(s).");
+        }
+
+        internal bool ScanProjectAssets()
+        {
+            return Scan(
+                new[] { "Assets" },
+                AssetGovernanceScanScope.ProjectAssets,
+                count => $"Scanned {count} asset(s) from project Assets.");
+        }
+
+        private bool Scan(
+            IReadOnlyList<string> assetPaths,
+            AssetGovernanceScanScope scanScope,
+            Func<int, string> createSuccessMessage)
+        {
+            ResetScanState();
+
             try
             {
                 var contexts = AssetScanner.Scan(assetPaths);
                 _lastResult = RuleRunner.Run(contexts);
-                _statusMessage = $"Scanned {contexts.Count} asset(s).";
+                _lastScanScope = scanScope;
+                _statusMessage = createSuccessMessage(contexts.Count);
             }
             catch (Exception exception)
             {
-                _lastResult = null;
                 _statusMessage = $"Scan failed: {exception.Message}";
                 Repaint();
                 return false;
@@ -119,6 +153,29 @@ namespace UnityAssetGovernance
 
             Repaint();
             return true;
+        }
+
+        private void ResetScanState()
+        {
+            _selectedFixableIssues.Clear();
+            _lastBatchFixResult = null;
+            _lastResult = null;
+            _lastScanScope = null;
+        }
+
+        private bool RescanLastScope()
+        {
+            switch (_lastScanScope)
+            {
+                case AssetGovernanceScanScope.Selection:
+                    return ScanSelection();
+                case AssetGovernanceScanScope.ProjectAssets:
+                    return ScanProjectAssets();
+                default:
+                    _statusMessage = "Rescan failed: No successful scan scope is available.";
+                    Repaint();
+                    return false;
+            }
         }
 
         internal static IReadOnlyList<string> CollectSelectedAssetPaths()
@@ -413,12 +470,15 @@ namespace UnityAssetGovernance
                     return false;
                 }
 
-                if (!ScanSelection())
+                var scanScope = _lastScanScope;
+                if (!RescanLastScope())
                 {
                     return false;
                 }
 
-                _statusMessage = $"Fixed {issue.RuleId} and rescanned selection.";
+                _statusMessage = scanScope == AssetGovernanceScanScope.ProjectAssets
+                    ? $"Fixed {issue.RuleId} and rescanned project Assets."
+                    : $"Fixed {issue.RuleId} and rescanned selection.";
                 Repaint();
                 return true;
             }
@@ -443,7 +503,7 @@ namespace UnityAssetGovernance
             try
             {
                 var batchResult = BatchFixRunner.Fix(selectedIssues);
-                var rescanned = ScanSelection();
+                var rescanned = RescanLastScope();
                 var rescanStatus = _statusMessage;
                 _lastBatchFixResult = batchResult;
                 _statusMessage =

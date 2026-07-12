@@ -85,6 +85,35 @@ namespace UnityAssetGovernance.Tests
         }
 
         [Test]
+        public void ScanProjectAssets_ScansAssetsWithoutAProjectSelection()
+        {
+            Selection.objects = Array.Empty<Object>();
+            var window = ScriptableObject.CreateInstance<AssetGovernanceWindow>();
+
+            try
+            {
+                var succeeded = window.ScanProjectAssets();
+
+                Assert.That(succeeded, Is.True);
+                Assert.That(
+                    window.LastScanScope,
+                    Is.EqualTo(AssetGovernanceScanScope.ProjectAssets));
+                Assert.That(
+                    window.LastResult.Issues.Any(
+                        issue => issue.RuleId == "UAG-NAME-001" &&
+                                 issue.AssetPath == FirstAssetPath),
+                    Is.True);
+                Assert.That(
+                    window.StatusMessage,
+                    Does.StartWith("Scanned ").And.EndWith(" asset(s) from project Assets."));
+            }
+            finally
+            {
+                Object.DestroyImmediate(window);
+            }
+        }
+
+        [Test]
         public void ScanSelection_UsesDefaultProfileRuleState()
         {
             var profile = ScriptableObject.CreateInstance<GovernanceProfile>();
@@ -183,6 +212,87 @@ namespace UnityAssetGovernance.Tests
                 Assert.That(
                     window.LastResult.Issues.Single(issue => issue.RuleId == "UAG-NAME-001").Severity,
                     Is.EqualTo(RuleSeverity.Error));
+            }
+            finally
+            {
+                Object.DestroyImmediate(window);
+            }
+        }
+
+        [Test]
+        public void FixIssue_AfterProjectScanRescansProjectAssets()
+        {
+            WritePngAsset(FixableTexturePath);
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            ConfigureTexture(FixableTexturePath, true);
+            Selection.objects = Array.Empty<Object>();
+            var window = ScriptableObject.CreateInstance<AssetGovernanceWindow>();
+
+            try
+            {
+                Assert.That(window.ScanProjectAssets(), Is.True);
+                var issue = window.LastResult.Issues.Single(
+                    candidate => candidate.RuleId == "UAG-TEX-001" &&
+                                 candidate.AssetPath == FixableTexturePath);
+
+                var succeeded = window.FixIssue(issue);
+                var importer = (TextureImporter)AssetImporter.GetAtPath(FixableTexturePath);
+
+                Assert.That(succeeded, Is.True);
+                Assert.That(importer.mipmapEnabled, Is.False);
+                Assert.That(
+                    window.LastScanScope,
+                    Is.EqualTo(AssetGovernanceScanScope.ProjectAssets));
+                Assert.That(
+                    window.LastResult.Issues.Any(
+                        candidate => candidate.RuleId == "UAG-TEX-001" &&
+                                     candidate.AssetPath == FixableTexturePath),
+                    Is.False);
+                Assert.That(
+                    window.StatusMessage,
+                    Is.EqualTo("Fixed UAG-TEX-001 and rescanned project Assets."));
+            }
+            finally
+            {
+                Object.DestroyImmediate(window);
+            }
+        }
+
+        [Test]
+        public void FixSelectedIssues_AfterProjectScanRescansProjectAssets()
+        {
+            WritePngAsset(FixableTexturePath);
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            ConfigureTexture(FixableTexturePath, true, true);
+            Selection.objects = Array.Empty<Object>();
+            var window = ScriptableObject.CreateInstance<AssetGovernanceWindow>();
+
+            try
+            {
+                Assert.That(window.ScanProjectAssets(), Is.True);
+                var textureIssues = window.LastResult.Issues
+                    .Where(candidate => candidate.AssetPath == FixableTexturePath && candidate.CanFix)
+                    .ToArray();
+                Assert.That(textureIssues, Has.Length.EqualTo(2));
+                foreach (var issue in textureIssues)
+                {
+                    window.SetIssueSelected(issue, true);
+                }
+
+                var succeeded = window.FixSelectedIssues();
+                var importer = (TextureImporter)AssetImporter.GetAtPath(FixableTexturePath);
+
+                Assert.That(succeeded, Is.True);
+                Assert.That(importer.mipmapEnabled, Is.False);
+                Assert.That(importer.isReadable, Is.False);
+                Assert.That(
+                    window.LastScanScope,
+                    Is.EqualTo(AssetGovernanceScanScope.ProjectAssets));
+                Assert.That(window.LastBatchFixResult.SucceededCount, Is.EqualTo(2));
+                Assert.That(
+                    window.LastResult.Issues.Any(
+                        candidate => candidate.AssetPath == FixableTexturePath && candidate.CanFix),
+                    Is.False);
             }
             finally
             {
