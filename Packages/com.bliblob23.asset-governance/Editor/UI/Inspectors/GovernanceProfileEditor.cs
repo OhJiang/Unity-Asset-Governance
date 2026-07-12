@@ -14,6 +14,15 @@ namespace UnityAssetGovernance
     {
         private const string NoRuleSelectedLabel = "Select a rule";
 
+        private static readonly string[] SectionLabels =
+        {
+            "Overview",
+            "Exclusions",
+            "Rules",
+            "Whitelist",
+            "Settings"
+        };
+
         private SerializedProperty _excludedPaths;
         private SerializedProperty _whitelistEntries;
         private SerializedProperty _ruleStates;
@@ -23,10 +32,7 @@ namespace UnityAssetGovernance
             Array.Empty<RuleSettingsInspectorUtility.RuleSettingsOption>();
         private string _ruleDiscoveryError;
         private string _ruleSettingsDiscoveryError;
-        private bool _showExcludedPaths = true;
-        private bool _showRuleStates = true;
-        private bool _showWhitelistEntries = true;
-        private bool _showRuleSettings = true;
+        private ProfileSection _selectedSection;
 
         private void OnEnable()
         {
@@ -48,10 +54,8 @@ namespace UnityAssetGovernance
                 MessageType.Info);
 
             DrawRuleDiscoveryStatus();
-            DrawExcludedPaths();
-            DrawRuleStates();
-            DrawWhitelistEntries();
-            DrawRuleSettings();
+            DrawSectionNavigation();
+            DrawSelectedSection();
 
             serializedObject.ApplyModifiedProperties();
         }
@@ -80,18 +84,95 @@ namespace UnityAssetGovernance
             }
         }
 
-        private void DrawRuleStates()
+        private void DrawSectionNavigation()
         {
             EditorGUILayout.Space();
-            _showRuleStates = EditorGUILayout.Foldout(
-                _showRuleStates,
-                $"Rule States ({_ruleStates.arraySize})",
-                true);
-            if (!_showRuleStates)
-            {
-                return;
-            }
+            _selectedSection = (ProfileSection)GUILayout.Toolbar(
+                (int)_selectedSection,
+                SectionLabels);
+        }
 
+        private void DrawSelectedSection()
+        {
+            switch (_selectedSection)
+            {
+                case ProfileSection.Overview:
+                    DrawOverview();
+                    break;
+                case ProfileSection.Exclusions:
+                    DrawExcludedPaths();
+                    break;
+                case ProfileSection.Rules:
+                    DrawRuleStates();
+                    break;
+                case ProfileSection.Whitelist:
+                    DrawWhitelistEntries();
+                    break;
+                case ProfileSection.Settings:
+                    DrawRuleSettings();
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        private void DrawOverview()
+        {
+            DrawSectionHeader("Profile Overview");
+            EditorGUILayout.HelpBox(
+                "Choose a section below to edit one category at a time. " +
+                "The numbers show how many entries are currently configured.",
+                MessageType.None);
+
+            DrawOverviewRow(
+                "Excluded Paths",
+                _excludedPaths.arraySize,
+                "Assets and folders skipped by every rule.",
+                ProfileSection.Exclusions);
+            DrawOverviewRow(
+                "Rule States",
+                _ruleStates.arraySize,
+                "Rule enablement and severity overrides.",
+                ProfileSection.Rules);
+            DrawOverviewRow(
+                "Whitelist Entries",
+                _whitelistEntries.arraySize,
+                "Paths ignored by selected rules only.",
+                ProfileSection.Whitelist);
+            DrawOverviewRow(
+                "Rule Settings",
+                _ruleSettings.arraySize,
+                "Strongly typed project-specific rule configuration.",
+                ProfileSection.Settings);
+        }
+
+        private void DrawOverviewRow(
+            string label,
+            int count,
+            string description,
+            ProfileSection destination)
+        {
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField($"{label} ({count})", EditorStyles.boldLabel);
+            if (GUILayout.Button("Open", GUILayout.Width(70f)))
+            {
+                _selectedSection = destination;
+            }
+            EditorGUILayout.EndHorizontal();
+            EditorGUILayout.LabelField(description, EditorStyles.wordWrappedMiniLabel);
+            EditorGUILayout.EndVertical();
+        }
+
+        private static void DrawSectionHeader(string title)
+        {
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField(title, EditorStyles.boldLabel);
+        }
+
+        private void DrawRuleStates()
+        {
+            DrawSectionHeader($"Rule States ({_ruleStates.arraySize})");
             EditorGUILayout.HelpBox(
                 "Add entries only when a rule must be disabled or its severity must be overridden. " +
                 "Rules without an entry remain enabled with their default severity.",
@@ -138,16 +219,7 @@ namespace UnityAssetGovernance
 
         private void DrawExcludedPaths()
         {
-            EditorGUILayout.Space();
-            _showExcludedPaths = EditorGUILayout.Foldout(
-                _showExcludedPaths,
-                $"Excluded Paths ({_excludedPaths.arraySize})",
-                true);
-            if (!_showExcludedPaths)
-            {
-                return;
-            }
-
+            DrawSectionHeader($"Excluded Paths ({_excludedPaths.arraySize})");
             EditorGUILayout.HelpBox(
                 "Assets and folders under these paths are skipped by all rules. " +
                 "Drag an item from the Project window into the object field to fill its path.",
@@ -186,16 +258,7 @@ namespace UnityAssetGovernance
 
         private void DrawWhitelistEntries()
         {
-            EditorGUILayout.Space();
-            _showWhitelistEntries = EditorGUILayout.Foldout(
-                _showWhitelistEntries,
-                $"Whitelist Entries ({_whitelistEntries.arraySize})",
-                true);
-            if (!_showWhitelistEntries)
-            {
-                return;
-            }
-
+            DrawSectionHeader($"Whitelist Entries ({_whitelistEntries.arraySize})");
             EditorGUILayout.HelpBox(
                 "A whitelist entry skips only the selected rules for one asset or folder path. " +
                 "Other rules continue to evaluate the same path.",
@@ -298,16 +361,7 @@ namespace UnityAssetGovernance
 
         private void DrawRuleSettings()
         {
-            EditorGUILayout.Space();
-            _showRuleSettings = EditorGUILayout.Foldout(
-                _showRuleSettings,
-                $"Rule Settings ({_ruleSettings.arraySize})",
-                true);
-            if (!_showRuleSettings)
-            {
-                return;
-            }
-
+            DrawSectionHeader($"Rule Settings ({_ruleSettings.arraySize})");
             EditorGUILayout.HelpBox(
                 "Rule Settings provide strongly typed configuration for rules that need project-specific values. " +
                 "Create a supported Settings asset here or add an existing one.",
@@ -846,6 +900,15 @@ namespace UnityAssetGovernance
             return remainingCount > 0
                 ? $"{summary} and {remainingCount} more"
                 : summary;
+        }
+
+        private enum ProfileSection
+        {
+            Overview,
+            Exclusions,
+            Rules,
+            Whitelist,
+            Settings
         }
 
         internal readonly struct RuleOption
