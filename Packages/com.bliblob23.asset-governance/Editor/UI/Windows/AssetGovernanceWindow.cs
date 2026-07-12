@@ -15,6 +15,11 @@ namespace UnityAssetGovernance
         private readonly HashSet<ValidationIssue> _selectedFixableIssues =
             new HashSet<ValidationIssue>();
         private Vector2 _scrollPosition;
+        private string _issueSearchText = string.Empty;
+        private bool _showErrors = true;
+        private bool _showWarnings = true;
+        private bool _showInfo = true;
+        private bool _showOnlyFixable;
         private ValidationRunResult _lastResult;
         private BatchFixResult _lastBatchFixResult;
         private string _statusMessage = "Select assets or folders, then run validation.";
@@ -49,18 +54,36 @@ namespace UnityAssetGovernance
             }
 
             EditorGUILayout.Space();
+            DrawIssueFilters();
+            var visibleIssues = FilterIssues(
+                _lastResult.Issues,
+                _issueSearchText,
+                _showErrors,
+                _showWarnings,
+                _showInfo,
+                _showOnlyFixable);
+
             EditorGUILayout.LabelField(
-                $"Issues: {_lastResult.Issues.Count}    Execution Errors: {_lastResult.ExecutionErrors.Count}",
+                $"Issues: {_lastResult.Issues.Count}    Visible: {visibleIssues.Count}    " +
+                $"Execution Errors: {_lastResult.ExecutionErrors.Count}",
                 EditorStyles.boldLabel);
 
-            DrawBatchFixActions(_lastResult.Issues);
+            DrawBatchFixActions(visibleIssues);
             if (_lastResult == null)
             {
                 return;
             }
 
+            visibleIssues = FilterIssues(
+                _lastResult.Issues,
+                _issueSearchText,
+                _showErrors,
+                _showWarnings,
+                _showInfo,
+                _showOnlyFixable);
+
             _scrollPosition = EditorGUILayout.BeginScrollView(_scrollPosition);
-            DrawIssues(_lastResult.Issues);
+            DrawIssues(visibleIssues, _lastResult.Issues.Count);
             DrawExecutionErrors(_lastResult.ExecutionErrors);
             DrawBatchFixErrors(_lastBatchFixResult);
             EditorGUILayout.EndScrollView();
@@ -153,13 +176,18 @@ namespace UnityAssetGovernance
 
         internal void SelectAllFixableIssues()
         {
+            SelectAllFixableIssues(_lastResult?.Issues);
+        }
+
+        internal void SelectAllFixableIssues(IReadOnlyList<ValidationIssue> issues)
+        {
             _selectedFixableIssues.Clear();
-            if (_lastResult == null)
+            if (issues == null)
             {
                 return;
             }
 
-            foreach (var issue in _lastResult.Issues)
+            foreach (var issue in issues)
             {
                 if (issue.CanFix)
                 {
@@ -173,18 +201,109 @@ namespace UnityAssetGovernance
             _selectedFixableIssues.Clear();
         }
 
+        private void DrawIssueFilters()
+        {
+            _issueSearchText = EditorGUILayout.TextField("Search", _issueSearchText);
+
+            EditorGUILayout.BeginHorizontal();
+            _showErrors = EditorGUILayout.ToggleLeft("Error", _showErrors, GUILayout.Width(70f));
+            _showWarnings = EditorGUILayout.ToggleLeft("Warning", _showWarnings, GUILayout.Width(80f));
+            _showInfo = EditorGUILayout.ToggleLeft("Info", _showInfo, GUILayout.Width(60f));
+            _showOnlyFixable = EditorGUILayout.ToggleLeft(
+                "Fixable Only",
+                _showOnlyFixable,
+                GUILayout.Width(100f));
+            EditorGUILayout.EndHorizontal();
+        }
+
+        internal static IReadOnlyList<ValidationIssue> FilterIssues(
+            IEnumerable<ValidationIssue> issues,
+            string searchText,
+            bool showErrors,
+            bool showWarnings,
+            bool showInfo,
+            bool showOnlyFixable)
+        {
+            if (issues == null)
+            {
+                throw new ArgumentNullException(nameof(issues));
+            }
+
+            var normalizedSearchText = string.IsNullOrWhiteSpace(searchText)
+                ? string.Empty
+                : searchText.Trim();
+            var filteredIssues = new List<ValidationIssue>();
+
+            foreach (var issue in issues)
+            {
+                if (issue == null)
+                {
+                    throw new ArgumentException(
+                        "Issue collections cannot contain null.",
+                        nameof(issues));
+                }
+
+                if (!IsSeverityVisible(
+                        issue.Severity,
+                        showErrors,
+                        showWarnings,
+                        showInfo) ||
+                    (showOnlyFixable && !issue.CanFix) ||
+                    !MatchesSearch(issue, normalizedSearchText))
+                {
+                    continue;
+                }
+
+                filteredIssues.Add(issue);
+            }
+
+            return new ReadOnlyCollection<ValidationIssue>(filteredIssues);
+        }
+
+        private static bool IsSeverityVisible(
+            RuleSeverity severity,
+            bool showErrors,
+            bool showWarnings,
+            bool showInfo)
+        {
+            switch (severity)
+            {
+                case RuleSeverity.Error:
+                    return showErrors;
+                case RuleSeverity.Warning:
+                    return showWarnings;
+                case RuleSeverity.Info:
+                    return showInfo;
+                default:
+                    return false;
+            }
+        }
+
+        private static bool MatchesSearch(
+            ValidationIssue issue,
+            string searchText)
+        {
+            return string.IsNullOrEmpty(searchText) ||
+                   issue.RuleId.IndexOf(searchText, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   issue.AssetPath.IndexOf(searchText, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   issue.Message.IndexOf(searchText, StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
         private void DrawBatchFixActions(IReadOnlyList<ValidationIssue> issues)
         {
-            if (!issues.Any(issue => issue.CanFix))
+            var hasVisibleFixableIssue = issues.Any(issue => issue.CanFix);
+            if (!hasVisibleFixableIssue && _selectedFixableIssues.Count == 0)
             {
                 return;
             }
 
             EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button("Select All Fixable"))
+            EditorGUI.BeginDisabledGroup(!hasVisibleFixableIssue);
+            if (GUILayout.Button("Select All Visible Fixable"))
             {
-                SelectAllFixableIssues();
+                SelectAllFixableIssues(issues);
             }
+            EditorGUI.EndDisabledGroup();
 
             if (GUILayout.Button("Clear Selection"))
             {
@@ -221,11 +340,16 @@ namespace UnityAssetGovernance
             }
         }
 
-        private void DrawIssues(IReadOnlyList<ValidationIssue> issues)
+        private void DrawIssues(
+            IReadOnlyList<ValidationIssue> issues,
+            int totalIssueCount)
         {
             if (issues.Count == 0)
             {
-                EditorGUILayout.HelpBox("No asset issues found.", MessageType.Info);
+                var message = totalIssueCount == 0
+                    ? "No asset issues found."
+                    : "No asset issues match the current filters.";
+                EditorGUILayout.HelpBox(message, MessageType.Info);
                 return;
             }
 

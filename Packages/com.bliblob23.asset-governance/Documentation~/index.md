@@ -253,6 +253,20 @@ window displays asset issues separately from rule execution errors. Click an ass
 and ping the corresponding asset in the Project window. A confirmed fixable issue also displays a
 **Fix** button; successful fixes are followed by a rescan of the current selection.
 
+Fixable issues also have selection toggles. Use **Select All Visible Fixable** or choose individual
+issues, then click **Fix Selected**. The confirmation dialog reports both the selected issue count and
+affected asset count and allows cancellation. Only selected issues are processed. Each issue refreshes
+its asset context before fixing, one failure does not stop later fixes, and the selection is rescanned
+once after the batch. The status message summarizes succeeded, failed, and skipped counts; detailed
+batch failures remain visible below the validation results.
+
+The result controls can independently show or hide `Error`, `Warning`, and `Info` issues, limit the
+list to fixable issues, and search rule IDs, asset paths, or issue messages without case sensitivity.
+Filtering uses the existing scan result and does not execute rules again. Explicitly selected issues
+remain selected when temporarily hidden; the selected count and confirmation dialog keep that state
+visible before a batch fix. **Select All Visible Fixable** replaces the current selection with only the
+fixable issues visible under the active filters.
+
 ## Planned Documentation
 
 - Installation

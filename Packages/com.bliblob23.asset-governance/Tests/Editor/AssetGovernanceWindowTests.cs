@@ -301,6 +301,85 @@ namespace UnityAssetGovernance.Tests
         }
 
         [Test]
+        public void FilterIssues_AppliesSeverityAndFixableFiltersWithoutChangingOrder()
+        {
+            var errorIssue = CreateIssue(
+                "UAG-TEX-001",
+                RuleSeverity.Error,
+                "Assets/UI/Icon.png",
+                "Disable mipmaps.",
+                true);
+            var warningIssue = CreateIssue(
+                "UAG-NAME-001",
+                RuleSeverity.Warning,
+                "Assets/Bad Name.png",
+                "Remove spaces.",
+                false);
+            var infoIssue = CreateIssue(
+                "CUSTOM-AUDIO-001",
+                RuleSeverity.Info,
+                "Assets/Audio/Bgm.ogg",
+                "Use Streaming.",
+                true);
+            var issues = new[] { errorIssue, warningIssue, infoIssue };
+
+            var warnings = AssetGovernanceWindow.FilterIssues(
+                issues,
+                string.Empty,
+                false,
+                true,
+                false,
+                false);
+            var fixable = AssetGovernanceWindow.FilterIssues(
+                issues,
+                string.Empty,
+                true,
+                true,
+                true,
+                true);
+
+            Assert.That(warnings, Is.EqualTo(new[] { warningIssue }));
+            Assert.That(fixable, Is.EqualTo(new[] { errorIssue, infoIssue }));
+        }
+
+        [Test]
+        public void FilterIssues_SearchesRulePathAndMessageWithoutCaseSensitivity()
+        {
+            var ruleMatch = CreateIssue(
+                "UAG-TEX-001",
+                RuleSeverity.Error,
+                "Assets/UI/Icon.png",
+                "Disable mipmaps.",
+                true);
+            var pathMatch = CreateIssue(
+                "UAG-NAME-001",
+                RuleSeverity.Warning,
+                "Assets/Bad Name.png",
+                "Remove spaces.",
+                false);
+            var messageMatch = CreateIssue(
+                "CUSTOM-AUDIO-001",
+                RuleSeverity.Info,
+                "Assets/Audio/Bgm.ogg",
+                "Use Streaming.",
+                true);
+            var issues = new[] { ruleMatch, pathMatch, messageMatch };
+
+            Assert.That(
+                AssetGovernanceWindow.FilterIssues(
+                    issues, "tex-001", true, true, true, false),
+                Is.EqualTo(new[] { ruleMatch }));
+            Assert.That(
+                AssetGovernanceWindow.FilterIssues(
+                    issues, "bad name", true, true, true, false),
+                Is.EqualTo(new[] { pathMatch }));
+            Assert.That(
+                AssetGovernanceWindow.FilterIssues(
+                    issues, "  STREAMING  ", true, true, true, false),
+                Is.EqualTo(new[] { messageMatch }));
+        }
+
+        [Test]
         public void LocateAsset_SelectsTheIssueAsset()
         {
             var expectedAsset = AssetDatabase.LoadMainAssetAtPath(SecondAssetPath);
@@ -329,6 +408,21 @@ namespace UnityAssetGovernance.Tests
             {
                 Object.DestroyImmediate(window);
             }
+        }
+
+        private static ValidationIssue CreateIssue(
+            string ruleId,
+            RuleSeverity severity,
+            string assetPath,
+            string message,
+            bool canFix)
+        {
+            return new ValidationIssue(
+                ruleId,
+                severity,
+                assetPath,
+                message,
+                canFix);
         }
 
         private static void WritePngAsset(string assetPath)
