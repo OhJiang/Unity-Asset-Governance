@@ -2,7 +2,7 @@
   "name": "com.bliblob23.asset-governance",
   "version": "0.1.0",
   "displayName": "Unity Asset Governance",
-  "description": "An extensible Unity Editor framework for asset validation, configuration-driven governance, automatic fixes, reporting, and CI integration.",
+  "description": "An extensible Unity Editor framework for configuration-driven asset validation, governance, and explicit safe fixes.",
   "unity": "6000.5",
   "keywords": [
     "asset",
@@ -20,5 +20,13 @@
       "description": "An independent third-party rule with its own ScriptableObject settings and EditMode tests.",
       "path": "Samples~/CustomRuleExample"
     }
-  ]
+  ],
+  "documentationUrl": "https://github.com/OhJiang/Unity-Asset-Governance/tree/main/Packages/com.bliblob23.asset-governance/Documentation~",
+  "changelogUrl": "https://github.com/OhJiang/Unity-Asset-Governance/blob/main/Packages/com.bliblob23.asset-governance/CHANGELOG.md",
+  "licensesUrl": "https://github.com/OhJiang/Unity-Asset-Governance/blob/main/LICENSE.md",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/OhJiang/Unity-Asset-Governance.git",
+    "revision": "main"
+  }
 }

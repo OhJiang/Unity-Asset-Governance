@@ -4,11 +4,23 @@ Unity Asset Governance is an extensible Unity Editor framework for asset validat
 
 ## Status
 
-Early development. Public APIs are not stable.
+`v0.1.0` release candidate preparation. Public APIs are not stable.
 
 ## Requirements
 
 - Unity 6000.5 or newer
+
+## Installation
+
+In **Window > Package Management > Package Manager**, choose **+ > Install package from git URL**
+and enter:
+
+```text
+https://github.com/OhJiang/Unity-Asset-Governance.git?path=/Packages/com.bliblob23.asset-governance
+```
+
+For a local checkout, choose **Install package from disk** and select this package's `package.json`.
+See [Installation](Documentation~/Installation.md) for verification and sample import steps.
 
 ## Current Features
 
@@ -81,6 +93,14 @@ Import **Custom Rule and Strongly Typed Settings** from the Package Manager Samp
 public rule discovered from an independent Editor assembly. The sample owns its `ScriptableObject`
 settings type, reads it through `GovernanceProfile`, and includes EditMode tests. No framework source
 or central rule registry is modified.
+
+## Documentation
+
+- [Framework and built-in rule reference](Documentation~/index.md)
+- [Installation](Documentation~/Installation.md)
+- [Configuration](Documentation~/Configuration.md)
+- [Writing a custom rule](Documentation~/WritingARule.md)
+- [v0.1.0 release checklist](Documentation~/ReleaseChecklist.md)
 
 ## Roadmap
 

@@ -2,6 +2,13 @@
 
 Unity Asset Governance is an extensible, configuration-driven asset validation framework for the Unity Editor.
 
+## Guides
+
+- [Installation](Installation.md)
+- [Configuration](Configuration.md)
+- [Writing a custom rule](WritingARule.md)
+- [v0.1.0 release checklist](ReleaseChecklist.md)
+
 ## Rule Extension Contract
 
 Custom validation rules implement `IAssetRule`. Rules expose immutable metadata through
@@ -294,7 +301,4 @@ fixable issues visible under the active filters.
 
 ## Planned Documentation
 
-- Installation
-- Configuration
-- Writing custom rules
-- CI integration
+- BatchMode and CI integration
