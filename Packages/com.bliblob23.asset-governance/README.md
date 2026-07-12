@@ -4,7 +4,7 @@ Unity Asset Governance is an extensible Unity Editor framework for asset validat
 
 ## Status
 
-`v0.1.0` release candidate preparation. Public APIs are not stable.
+`v0.1.0` is the first public MVP release. Public APIs are not stable.
 
 ## Requirements
 

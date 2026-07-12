@@ -11,8 +11,8 @@ Packages/com.bliblob23.asset-governance
 
 ## Status
 
-`v0.1.0` release candidate preparation. The package is usable for manual project scans, but public
-APIs may still change before `1.0.0`.
+`v0.1.0` is the first public MVP release. The package supports manual project scans and explicit
+safe fixes. Public APIs may still change before `1.0.0`.
 
 ## Requirements
 
