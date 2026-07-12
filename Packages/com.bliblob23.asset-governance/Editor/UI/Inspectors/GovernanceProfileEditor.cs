@@ -20,6 +20,7 @@ namespace UnityAssetGovernance
         private SerializedProperty _ruleSettings;
         private IReadOnlyList<RuleOption> _ruleOptions = Array.Empty<RuleOption>();
         private string _ruleDiscoveryError;
+        private bool _showExcludedPaths = true;
         private bool _showRuleStates = true;
         private bool _showWhitelistEntries = true;
 
@@ -43,7 +44,7 @@ namespace UnityAssetGovernance
                 MessageType.Info);
 
             DrawRuleDiscoveryStatus();
-            EditorGUILayout.PropertyField(_excludedPaths, true);
+            DrawExcludedPaths();
             DrawRuleStates();
             DrawWhitelistEntries();
             EditorGUILayout.PropertyField(_ruleSettings, true);
@@ -123,6 +124,54 @@ namespace UnityAssetGovernance
             }
         }
 
+        private void DrawExcludedPaths()
+        {
+            EditorGUILayout.Space();
+            _showExcludedPaths = EditorGUILayout.Foldout(
+                _showExcludedPaths,
+                $"Excluded Paths ({_excludedPaths.arraySize})",
+                true);
+            if (!_showExcludedPaths)
+            {
+                return;
+            }
+
+            EditorGUILayout.HelpBox(
+                "Assets and folders under these paths are skipped by all rules. " +
+                "Drag an item from the Project window into the object field to fill its path.",
+                MessageType.None);
+
+            for (var index = 0; index < _excludedPaths.arraySize; index++)
+            {
+                var path = _excludedPaths.GetArrayElementAtIndex(index);
+                EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField($"Excluded Path {index + 1}", EditorStyles.boldLabel);
+                if (GUILayout.Button("Remove", GUILayout.Width(70f)))
+                {
+                    _excludedPaths.DeleteArrayElementAtIndex(index);
+                    EditorGUILayout.EndHorizontal();
+                    EditorGUILayout.EndVertical();
+                    break;
+                }
+                EditorGUILayout.EndHorizontal();
+
+                AssetPathField.Draw(new GUIContent("Asset Path"), path);
+                if (string.IsNullOrWhiteSpace(path.stringValue))
+                {
+                    EditorGUILayout.HelpBox("Asset Path is required.", MessageType.Error);
+                }
+                EditorGUILayout.EndVertical();
+            }
+
+            if (GUILayout.Button("Add Excluded Path"))
+            {
+                var index = _excludedPaths.arraySize;
+                _excludedPaths.arraySize++;
+                _excludedPaths.GetArrayElementAtIndex(index).stringValue = string.Empty;
+            }
+        }
+
         private void DrawWhitelistEntries()
         {
             EditorGUILayout.Space();
@@ -158,7 +207,7 @@ namespace UnityAssetGovernance
                 }
                 EditorGUILayout.EndHorizontal();
 
-                EditorGUILayout.PropertyField(assetPath, new GUIContent("Asset Path"));
+                AssetPathField.Draw(new GUIContent("Asset Path"), assetPath);
                 if (string.IsNullOrWhiteSpace(assetPath.stringValue))
                 {
                     EditorGUILayout.HelpBox("Asset Path is required.", MessageType.Error);
@@ -176,47 +225,47 @@ namespace UnityAssetGovernance
 
         private void DrawWhitelistRuleIds(SerializedProperty ruleIds)
         {
-            EditorGUILayout.LabelField("Ignored Rules", EditorStyles.boldLabel);
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField(
+                $"Ignored Rules ({ruleIds.arraySize} selected)",
+                EditorStyles.boldLabel);
+
+            EditorGUI.BeginDisabledGroup(!string.IsNullOrEmpty(_ruleDiscoveryError));
+            if (GUILayout.Button("Edit Rules", GUILayout.Width(90f)))
+            {
+                var buttonRect = GUILayoutUtility.GetLastRect();
+                PopupWindow.Show(
+                    buttonRect,
+                    new RuleSelectionPopup(
+                        serializedObject.targetObject,
+                        ruleIds.propertyPath,
+                        _ruleOptions,
+                        Repaint));
+            }
+            EditorGUI.EndDisabledGroup();
+            EditorGUILayout.EndHorizontal();
 
             if (!string.IsNullOrEmpty(_ruleDiscoveryError))
             {
+                EditorGUILayout.HelpBox(
+                    "Rule selection is unavailable because rule discovery failed. " +
+                    "Use the serialized list below only to preserve or repair existing IDs.",
+                    MessageType.Warning);
                 EditorGUILayout.PropertyField(ruleIds, true);
                 return;
             }
 
-            foreach (var option in _ruleOptions)
-            {
-                var selected = ContainsRuleId(ruleIds, option.Id);
-                var updated = EditorGUILayout.ToggleLeft(option.Label, selected);
-                if (updated == selected)
-                {
-                    continue;
-                }
-
-                if (updated)
-                {
-                    AddRuleId(ruleIds, option.Id);
-                }
-                else
-                {
-                    RemoveRuleId(ruleIds, option.Id);
-                }
-            }
+            EditorGUILayout.LabelField(
+                BuildRuleSelectionSummary(ReadStringArray(ruleIds)),
+                EditorStyles.miniLabel);
 
             var missingRuleIds = GetMissingRuleIds(ruleIds, _ruleOptions);
-            foreach (var missingRuleId in missingRuleIds)
+            if (missingRuleIds.Count > 0)
             {
-                EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.HelpBox(
-                    string.IsNullOrWhiteSpace(missingRuleId)
-                        ? "The whitelist contains an empty rule ID."
-                        : $"Rule '{missingRuleId}' is not currently discovered.",
+                    $"{missingRuleIds.Count} saved rule ID(s) are not currently discovered. " +
+                    "Open Edit Rules to review or remove them.",
                     MessageType.Warning);
-                if (GUILayout.Button("Remove", GUILayout.Width(70f)))
-                {
-                    RemoveRuleId(ruleIds, missingRuleId);
-                }
-                EditorGUILayout.EndHorizontal();
             }
 
             if (ruleIds.arraySize == 0)
@@ -419,7 +468,7 @@ namespace UnityAssetGovernance
             return result;
         }
 
-        private static IReadOnlyList<string> GetMissingRuleIds(
+        internal static IReadOnlyList<string> GetMissingRuleIds(
             SerializedProperty ruleIds,
             IReadOnlyList<RuleOption> options)
         {
@@ -451,7 +500,7 @@ namespace UnityAssetGovernance
             return false;
         }
 
-        private static bool ContainsRuleId(SerializedProperty ruleIds, string ruleId)
+        internal static bool ContainsRuleId(SerializedProperty ruleIds, string ruleId)
         {
             for (var index = 0; index < ruleIds.arraySize; index++)
             {
@@ -467,7 +516,7 @@ namespace UnityAssetGovernance
             return false;
         }
 
-        private static void AddRuleId(SerializedProperty ruleIds, string ruleId)
+        internal static void AddRuleId(SerializedProperty ruleIds, string ruleId)
         {
             if (ContainsRuleId(ruleIds, ruleId))
             {
@@ -479,7 +528,7 @@ namespace UnityAssetGovernance
             ruleIds.GetArrayElementAtIndex(index).stringValue = ruleId;
         }
 
-        private static void RemoveRuleId(SerializedProperty ruleIds, string ruleId)
+        internal static void RemoveRuleId(SerializedProperty ruleIds, string ruleId)
         {
             for (var index = ruleIds.arraySize - 1; index >= 0; index--)
             {
@@ -491,6 +540,35 @@ namespace UnityAssetGovernance
                     ruleIds.DeleteArrayElementAtIndex(index);
                 }
             }
+        }
+
+        internal static string BuildRuleSelectionSummary(IReadOnlyList<string> ruleIds)
+        {
+            if (ruleIds == null)
+            {
+                throw new ArgumentNullException(nameof(ruleIds));
+            }
+
+            if (ruleIds.Count == 0)
+            {
+                return "No rules selected.";
+            }
+
+            const int visibleRuleCount = 3;
+            var summaryCount = Math.Min(ruleIds.Count, visibleRuleCount);
+            var visibleRuleIds = new string[summaryCount];
+            for (var index = 0; index < summaryCount; index++)
+            {
+                visibleRuleIds[index] = string.IsNullOrWhiteSpace(ruleIds[index])
+                    ? "(empty)"
+                    : ruleIds[index];
+            }
+
+            var summary = string.Join(", ", visibleRuleIds);
+            var remainingCount = ruleIds.Count - summaryCount;
+            return remainingCount > 0
+                ? $"{summary} and {remainingCount} more"
+                : summary;
         }
 
         internal readonly struct RuleOption

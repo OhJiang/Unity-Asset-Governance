@@ -71,6 +71,52 @@ namespace UnityAssetGovernance.Tests
                 GovernanceProfileEditor.FindDuplicateRuleIds(null));
         }
 
+        [Test]
+        public void BuildRuleSelectionSummary_LimitsVisibleRuleIds()
+        {
+            var summary = GovernanceProfileEditor.BuildRuleSelectionSummary(new[]
+            {
+                "RULE-A",
+                "RULE-B",
+                "RULE-C",
+                "RULE-D"
+            });
+
+            Assert.That(summary, Is.EqualTo("RULE-A, RULE-B, RULE-C and 1 more"));
+        }
+
+        [Test]
+        public void RuleSelectionPopup_MatchesRuleIdAndDisplayNameIgnoringCase()
+        {
+            var option = new GovernanceProfileEditor.RuleOption(
+                "UAG-TEX-001",
+                "UAG-TEX-001 — UI Texture Mipmaps Must Be Disabled");
+
+            Assert.That(RuleSelectionPopup.MatchesSearch(option, "tex-001"), Is.True);
+            Assert.That(RuleSelectionPopup.MatchesSearch(option, "mipmaps"), Is.True);
+            Assert.That(RuleSelectionPopup.MatchesSearch(option, "audio"), Is.False);
+        }
+
+        [Test]
+        public void AssetPathField_GetProjectAssetPath_ReturnsProjectFolderPath()
+        {
+            const string parentPath = "Assets";
+            var folderName = $"AssetPathFieldTests_{Guid.NewGuid():N}";
+            var folderPath = $"{parentPath}/{folderName}";
+
+            try
+            {
+                AssetDatabase.CreateFolder(parentPath, folderName);
+                var folder = AssetDatabase.LoadMainAssetAtPath(folderPath);
+
+                Assert.That(AssetPathField.GetProjectAssetPath(folder), Is.EqualTo(folderPath));
+            }
+            finally
+            {
+                AssetDatabase.DeleteAsset(folderPath);
+            }
+        }
+
         private sealed class EditorRuleA : IAssetRule
         {
             public RuleDescriptor Descriptor { get; } = new RuleDescriptor(
