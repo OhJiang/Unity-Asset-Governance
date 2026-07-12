@@ -52,6 +52,7 @@ Early development. Public APIs are not stable.
 - Safe automatic Streaming correction for `UAG-AUDIO-002`
 - Automatic discovery of the single project default profile, with explicit duplicate-profile errors
 - Configurable UI texture classification by importer type and project path prefixes
+- Importable third-party rule sample with independent assembly, strongly typed `ScriptableObject` settings, and EditMode tests
 
 ## Quick Configuration
 
@@ -74,11 +75,17 @@ Early development. Public APIs are not stable.
 
 When no profile or no `UAG-TEX-001` settings exist, the built-in rule keeps its safe default of treating Sprite textures as UI textures. `UAG-TEX-002` applies to every `TextureImporter`; add an asset or folder path with rule ID `UAG-TEX-002` to Whitelist Entries only when runtime CPU texture access is intentional. `UAG-TEX-003` applies a default Max Size limit of 2048 unless strongly typed settings provide a different default or path-specific override. `UAG-TEX-004` applies only to textures explicitly imported as Normal Maps; intentional exceptions can reuse the shared rule whitelist. `UAG-MODEL-001` expects Model Scale Factor 1 by default and supports strongly typed default and path-specific values. `UAG-MODEL-002` applies to every `ModelImporter`; whitelist only models that intentionally require runtime CPU mesh access. `UAG-AUDIO-001` runs only when strongly typed settings classify a clip by project path, and fixes Streaming clips to the configured non-Streaming Load Type. `UAG-AUDIO-002` independently classifies BGM or long audio by project path and fixes matching clips to Streaming. `UAG-NAME-002` always detects Chinese ideographs and optionally adds project-specific forbidden characters through strongly typed settings. Custom rules can derive their own settings from `AssetRuleSettings`; the core profile does not need to know concrete third-party settings types.
 
+## Custom Rule Sample
+
+Import **Custom Rule and Strongly Typed Settings** from the Package Manager Samples tab to see a
+public rule discovered from an independent Editor assembly. The sample owns its `ScriptableObject`
+settings type, reads it through `GovernanceProfile`, and includes EditMode tests. No framework source
+or central rule registry is modified.
+
 ## Roadmap
 
-1. Third-party rule and strongly typed settings sample
-2. CI integration
-3. Additional built-in rules based on project feedback
+1. CI integration
+2. Additional built-in rules based on project feedback
 
 ## License
 

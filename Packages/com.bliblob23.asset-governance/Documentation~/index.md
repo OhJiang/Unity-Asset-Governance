@@ -145,6 +145,25 @@ Create `UAG-NAME-002` settings from **Assets > Create > Asset Governance > Rule 
 Path Forbidden Characters Rule** when the project needs restrictions beyond built-in Chinese
 ideograph detection. Enter additional forbidden characters as a single string.
 
+## Third-Party Rule Sample
+
+Import **Custom Rule and Strongly Typed Settings** from the Package Manager Samples tab. The sample
+compiles into `UnityAssetGovernance.CustomRuleExample.Editor`, an independent Editor assembly that
+references only the public framework assembly. Its public `TextureNamePrefixRule` implementation is
+discovered automatically through `TypeCache`; no framework file or central rule list is changed.
+
+Create **Assets > Create > Asset Governance > Samples > Texture Name Prefix Rule**, configure a
+texture folder and required file name prefix, then add the settings asset to the project's
+**Governance Profile > Rule Settings** list. The sample rule remains inactive when its settings are
+missing. Once configured, it reports `SAMPLE-TEX-001` for matching textures that do not use the
+required prefix.
+
+The sample also includes an independent EditMode test assembly. Its tests demonstrate automatic
+rule discovery, behavior without configuration, violation reporting through `RuleRunner`, and a
+compliant texture path. Central exclusions, whitelists, rule enablement, and severity overrides work
+without sample-specific code because the framework applies them before and after the public rule
+contract.
+
 ## Built-in Rules
 
 ### UAG-NAME-001: Asset Paths Must Not Contain Spaces

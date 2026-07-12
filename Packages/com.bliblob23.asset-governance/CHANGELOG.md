@@ -43,4 +43,5 @@ All notable changes to this package will be documented in this file.
 - Per-issue asset context refresh, failure isolation, skipped issue tracking, one final rescan, and batch result summaries.
 - Editor window issue filtering by severity, fixability, rule ID, asset path, and issue message without rescanning.
 - Explicit project `Assets` scanning with scope-aware rescanning after single-issue and selected-issue batch fixes.
+- Importable third-party rule sample with an independent Editor assembly, rule-owned strongly typed `ScriptableObject` settings, and EditMode tests.
 - Public rule type filtering so non-public test and implementation helpers are ignored during `TypeCache` discovery.

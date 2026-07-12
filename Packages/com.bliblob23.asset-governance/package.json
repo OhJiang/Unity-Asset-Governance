@@ -13,5 +13,12 @@
   ],
   "author": {
     "name": "bliblob23"
-  }
+  },
+  "samples": [
+    {
+      "displayName": "Custom Rule and Strongly Typed Settings",
+      "description": "An independent third-party rule with its own ScriptableObject settings and EditMode tests.",
+      "path": "Samples~/CustomRuleExample"
+    }
+  ]
 }
